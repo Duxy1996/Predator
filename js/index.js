@@ -4,8 +4,12 @@ var mtlLoader = new THREE.MTLLoader();
 
 var scene = new THREE.Scene();
 
-var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
+var camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
 camera.position.z = 4;
+
+var ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
+scene.add( ambientLight );
+
 
 var controls = new THREE.OrbitControls( camera );
 
@@ -15,7 +19,7 @@ var raycaster = new THREE.Raycaster();
 
 var mouse = new THREE.Vector2();
 
-renderer.setClearColor("#999999");
+renderer.setClearColor("#EEEEFF");
 
 renderer.setSize( window.innerWidth, window.innerHeight );
 
@@ -23,13 +27,13 @@ document.body.appendChild( renderer.domElement );
 
 var aircarftList = []
 
-var body;
+var body = [];
 var gbu;
 var isgbu;
 
-loadObjModel('./objects/MQ-9-Predator/Vehicle.obj', loadAircraft);
-loadObjModel('./objects/MQ-9-Predator/Right-GBU.obj', loadGBU);
 loaderMTLTexture();
+//loadObjModel('./objects/MQ-9-Predator/Right-GBU.obj', loadGBU);
+
 
 var render = function () {
   requestAnimationFrame( render );
@@ -91,18 +95,23 @@ function getObject()
 window.requestAnimationFrame(render);
 
 
-function loadObjModel(url, callback)
+function loadObjModel(url, callback, material)
 {
-  loader.load(
+  loader
+  .setMaterials( material )
+  .setPath( './objects/MQ-9-Predator/' )
+  .load(
     url,
     function ( object )
     {
-      material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: false } );
-      object.traverse( function ( child ) {
-        if ( child instanceof THREE.Mesh ) {
-          child.material = material;
-        }
-      } );
+      object.traverse( function( node ) {
+          if( node.material ) {
+              node.material.oppacity = 1;
+              console.log(node.material);
+          }
+      });
+      console.log(object);
+
       callback(object);
     },
     function ( xhr ) {
@@ -117,11 +126,14 @@ function loadObjModel(url, callback)
 
 function loaderMTLTexture()
 {
-  mtlLoader.load(
-    './objects/MQ-9-Predator/Vehicle.mtl',
+  mtlLoader
+  .setPath( './objects/MQ-9-Predator/' )
+  .load(
+    'Vehicle.mtl',
     function ( material )
     {
       material.preload();
+      loadObjModel('Vehicle.obj', loadAircraft, material);
     }
   );
 }
@@ -133,6 +145,7 @@ function loadAircraft(object)
   body.position.z = 0;
   body.position.x = 0;
   body.position.y = 0;
+  body.scale.set(10,10,10);
   aircarftList.push(body)
 
   for ( var it in aircarftList )
