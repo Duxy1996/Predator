@@ -1,15 +1,16 @@
 
 var loader    = new THREE.OBJLoader();
+
 var mtlLoader = new THREE.MTLLoader();
 
 var scene = new THREE.Scene();
 
-var camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+var camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
 camera.position.z = 4;
 
 var ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
-scene.add( ambientLight );
 
+scene.add( ambientLight );
 
 var controls = new THREE.OrbitControls( camera );
 
@@ -19,7 +20,7 @@ var raycaster = new THREE.Raycaster();
 
 var mouse = new THREE.Vector2();
 
-renderer.setClearColor("#EEEEFF");
+renderer.setClearColor("#5566FF");
 
 renderer.setSize( window.innerWidth, window.innerHeight );
 
@@ -30,9 +31,28 @@ var aircarftList = []
 var body = [];
 var gbu;
 var isgbu;
+var path     = './objects/MQ-9-Predator/';
+var fileName = 'Vehicle';
+var weaponR  = 'Right-GBU';
+var weaponL  = 'Left-GBU';
 
-loaderMTLTexture();
-//loadObjModel('./objects/MQ-9-Predator/Right-GBU.obj', loadGBU);
+setTimeout(function(){ loaderMTLTexture( path, fileName ); }, 1100);
+setTimeout(function(){ loaderMTLTexture( path, weaponR ); }, 1200);
+setTimeout(function(){ loaderMTLTexture( path, weaponL ); }, 1300);
+
+
+
+
+
+function onLoad()
+{
+  console.log("Loaded");
+}
+
+function onError()
+{
+  console.log("Error");
+}
 
 
 var render = function () {
@@ -63,11 +83,9 @@ function onmouseupF()
 
 function onWindowResize()
 {
-
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize( window.innerWidth, window.innerHeight );
-
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
 function onMouseMove( event )
@@ -88,52 +106,47 @@ function getObject()
   }
   renderer.render( scene, camera );
 
-  scene.add(new THREE.ArrowHelper(raycaster.ray.direction, raycaster.ray.origin, 300, 0xff0000) );
+  //scene.add(new THREE.ArrowHelper(raycaster.ray.direction, raycaster.ray.origin, 300, 0xff0000) );
 }
 
 
 window.requestAnimationFrame(render);
 
 
-function loadObjModel(url, callback, material)
+function loadObjModel(path, url, callback, material)
 {
   loader
   .setMaterials( material )
-  .setPath( './objects/MQ-9-Predator/' )
+  .setPath( path )
   .load(
     url,
     function ( object )
     {
-      object.traverse( function( node ) {
-          if( node.material ) {
-              node.material.oppacity = 1;
-              console.log(node.material);
+      object.traverse( function( node )
+      {
+          if( node.material )
+          {
+            node.material.oppacity = 1;
           }
       });
       console.log(object);
-
       callback(object);
     },
-    function ( xhr ) {
-      console.log( 'loaded' );
-    },
-    function ( error )
-    {
-      console.log( 'An error happened' );
-    }
+    onLoad(),
+    onError()
   );
 }
 
-function loaderMTLTexture()
+function loaderMTLTexture(path, fileName)
 {
   mtlLoader
-  .setPath( './objects/MQ-9-Predator/' )
+  .setPath( path )
   .load(
-    'Vehicle.mtl',
+    fileName + '.mtl',
     function ( material )
     {
       material.preload();
-      loadObjModel('Vehicle.obj', loadAircraft, material);
+      loadObjModel( path, fileName + '.obj', loadAircraft, material );
     }
   );
 }
@@ -141,17 +154,11 @@ function loaderMTLTexture()
 function loadAircraft(object)
 {
   body = object;
-
   body.position.z = 0;
   body.position.x = 0;
   body.position.y = 0;
   body.scale.set(10,10,10);
-  aircarftList.push(body)
-
-  for ( var it in aircarftList )
-  {
-    scene.add( aircarftList[it] );
-  }
+  scene.add( object );
 }
 
 function loadGBU(object)
