@@ -3,10 +3,13 @@ var loader    = new THREE.OBJLoader();
 
 var mtlLoader = new THREE.MTLLoader();
 
+var listener = new THREE.AudioListener();
+
 var scene = new THREE.Scene();
 
 var camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
 camera.position.z = 4;
+camera.add( listener );
 
 var ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
 
@@ -35,14 +38,22 @@ var path     = './objects/MQ-9-Predator/';
 var fileName = 'Vehicle';
 var weaponR  = 'Right-GBU';
 var weaponL  = 'Left-GBU';
+var propT    = 'Back-Prop';
 
 setTimeout(function(){ loaderMTLTexture( path, fileName ); }, 1100);
 setTimeout(function(){ loaderMTLTexture( path, weaponR ); }, 1200);
 setTimeout(function(){ loaderMTLTexture( path, weaponL ); }, 1300);
+setTimeout(function(){ loaderMTLTexture( path, propT ); }, 1500);
 
+var audioElement = document.getElementById( 'music' );
+audioElement.play();
 
-
-
+var positionalAudio = new THREE.PositionalAudio( listener );
+positionalAudio.setMediaElementSource( audioElement );
+positionalAudio.setRefDistance( 1 );
+positionalAudio.setDirectionalCone( 180, 230, 0.1 );
+var helper = new THREE.PositionalAudioHelper( positionalAudio, 0.1 );
+positionalAudio.add( helper );
 
 function onLoad()
 {
@@ -129,7 +140,6 @@ function loadObjModel(path, url, callback, material)
             node.material.oppacity = 1;
           }
       });
-      console.log(object);
       callback(object);
     },
     onLoad(),
