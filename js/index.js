@@ -45,15 +45,37 @@ setTimeout(function(){ loaderMTLTexture( path, weaponR ); }, 1200);
 setTimeout(function(){ loaderMTLTexture( path, weaponL ); }, 1300);
 setTimeout(function(){ loaderMTLTexture( path, propT ); }, 1500);
 
-var audioElement = document.getElementById( 'music' );
-audioElement.play();
 
-var positionalAudio = new THREE.PositionalAudio( listener );
-positionalAudio.setMediaElementSource( audioElement );
-positionalAudio.setRefDistance( 1 );
-positionalAudio.setDirectionalCone( 180, 230, 0.1 );
-var helper = new THREE.PositionalAudioHelper( positionalAudio, 0.1 );
-positionalAudio.add( helper );
+var sound = new THREE.PositionalAudio( listener );
+
+var geometry = new THREE.SphereGeometry( 0.1, 10, 10 );
+var material = new THREE.MeshBasicMaterial( {color: 0xffff00,
+                                             side: THREE.DoubleSide,
+                                             opacity: 0.0,
+                                             transparent: true,
+                                             depthWrite: false} );
+var sphere = new THREE.Mesh( geometry, material );
+
+sphere.rotation.y = 2 * Math.PI;
+
+var audioLoader = new THREE.AudioLoader();
+audioLoader.load( './objects/MQ-9-Predator-Audio/Prop.mp3', function( buffer ) {
+  sound.setBuffer( buffer );
+  sound.setLoop( true );
+  sound.setVolume( 0.7 );
+  sphere.add(sound);
+  sound.play();
+});
+
+scene.add( sphere );
+
+sound.setRefDistance( 1 );
+sound.setDirectionalCone( 180, 250, 0.1  );
+
+var helper = new THREE.PositionalAudioHelper( sound, 0.1 );
+helper.rotation.y = 2 * Math.PI;
+helper.scale.set(10,10,10);
+//scene.add( helper );
 
 function onLoad()
 {
