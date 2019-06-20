@@ -136,7 +136,6 @@ var render = function () {
         gearObject[0].rotation.x -= 0.01;
       }
     }
-    console.log(gearObject[0].rotation.x);
   }
   renderer.render(scene, camera);
 };
