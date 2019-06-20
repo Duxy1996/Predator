@@ -286,4 +286,10 @@ function loadWithPivot(object, threeObject)
   scene.add(helperPivot)
 }
 
+function gearChange()
+{
+  gearUP = !gearUP;
+  gearsound.play();
+}
+
 render();
