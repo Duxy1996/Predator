@@ -37,6 +37,7 @@ var isPropeller;
 
 var path      = './objects/MQ-9-Predator/';
 var audiopath = './objects/MQ-9-Predator-Audio/Prop.mp3';
+var gearpath  = './objects/MQ-9-Predator-Audio/gear.mp3';
 var fileName  = 'Vehicle';
 var weaponR   = 'Right-GBU';
 var weaponL   = 'Left-GBU';
@@ -51,7 +52,7 @@ var gearObjectR = [];
 var gearObjectL = [];
 
 
-var gearUP = false;
+var gearUP = true;
 var maxFrontGear = 360;
 var minFrontGear = 0
 var isFrontGear = false;
@@ -65,7 +66,8 @@ setTimeout(function(){ loaderMTLTexture( path, gearF, gearObject, loadWithPivot 
 setTimeout(function(){ loaderMTLTexture( path, gearL, gearObjectR ); }, 3500);
 setTimeout(function(){ loaderMTLTexture( path, gearR, gearObjectL ); }, 4000);
 
-var sound = new THREE.PositionalAudio( listener );
+var sound     = new THREE.PositionalAudio( listener );
+var gearsound = new THREE.PositionalAudio( listener );
 
 var geometry = new THREE.SphereGeometry( 0.05, 10, 10 );
 var material = new THREE.MeshBasicMaterial( {color: 0xffff00,
@@ -92,6 +94,13 @@ audioLoader.load( audiopath, function( buffer )
   sound.setVolume( 0.7 );
   sphere.add( sound );
   sound.play();
+});
+
+audioLoader.load( gearpath, function( buffer )
+{
+  gearsound.setBuffer( buffer );
+  gearsound.setLoop( false );
+  gearsound.setVolume( 0.7 );
 });
 
 scene.add( sphere );
@@ -126,14 +135,14 @@ var render = function () {
     {
       if (gearObject[0].rotation.x < 0)
       {
-        gearObject[0].rotation.x += 0.01;
+        gearObject[0].rotation.x += 0.006;
       }
     }
     else
     {
       if (gearObject[0].rotation.x > -2.5)
       {
-        gearObject[0].rotation.x -= 0.01;
+        gearObject[0].rotation.x -= 0.006;
       }
     }
   }
@@ -166,6 +175,7 @@ function logKey(e)
   {
     case 103:
     gearUP = !gearUP;
+    gearsound.play();
     break;
   }
 }
