@@ -32,50 +32,76 @@ document.body.appendChild( renderer.domElement );
 var aircarftList = []
 
 var body = [];
-var gbu;
-var isgbu;
-var path     = './objects/MQ-9-Predator/';
-var fileName = 'Vehicle';
-var weaponR  = 'Right-GBU';
-var weaponL  = 'Left-GBU';
-var propT    = 'Back-Prop';
+var propeller;
+var isPropeller;
 
-setTimeout(function(){ loaderMTLTexture( path, fileName ); }, 1100);
-setTimeout(function(){ loaderMTLTexture( path, weaponR ); }, 1200);
-setTimeout(function(){ loaderMTLTexture( path, weaponL ); }, 1300);
-setTimeout(function(){ loaderMTLTexture( path, propT ); }, 1500);
+var path      = './objects/MQ-9-Predator/';
+var audiopath = './objects/MQ-9-Predator-Audio/Prop.mp3';
+var fileName  = 'Vehicle';
+var weaponR   = 'Right-GBU';
+var weaponL   = 'Left-GBU';
+var propT     = 'Back-Prop';
+var gearF     = 'Front-wheel';
+var gearL     = 'Left-wheel';
+var gearR     = 'Right-wheel';
 
+var threeObject = [];
+var gearObject = [];
+var gearObjectR = [];
+var gearObjectL = [];
+
+
+var gearUP = false;
+var maxFrontGear = 360;
+var minFrontGear = 0
+var isFrontGear = false;
+
+
+setTimeout(function(){ loaderMTLTexture( path, fileName, threeObject ); }, 1000);
+setTimeout(function(){ loaderMTLTexture( path, weaponR, threeObject ); }, 1500);
+setTimeout(function(){ loaderMTLTexture( path, weaponL, threeObject ); }, 2000);
+setTimeout(function(){ loaderMTLTexture( path, propT, threeObject, loadPropeller ); }, 2500);
+setTimeout(function(){ loaderMTLTexture( path, gearF, gearObject, loadWithPivot ); }, 3000);
+setTimeout(function(){ loaderMTLTexture( path, gearL, gearObjectR ); }, 3500);
+setTimeout(function(){ loaderMTLTexture( path, gearR, gearObjectL ); }, 4000);
 
 var sound = new THREE.PositionalAudio( listener );
 
-var geometry = new THREE.SphereGeometry( 0.1, 10, 10 );
+var geometry = new THREE.SphereGeometry( 0.05, 10, 10 );
 var material = new THREE.MeshBasicMaterial( {color: 0xffff00,
                                              side: THREE.DoubleSide,
                                              opacity: 0.0,
                                              transparent: true,
                                              depthWrite: false} );
-var sphere = new THREE.Mesh( geometry, material );
+
+function pivotFactory()
+{
+  return new THREE.Mesh( geometry, material );
+}
+
+var sphere       = pivotFactory();
+var sphereHelper = pivotFactory();
 
 sphere.rotation.y = 2 * Math.PI;
 
 var audioLoader = new THREE.AudioLoader();
-audioLoader.load( './objects/MQ-9-Predator-Audio/Prop.mp3', function( buffer ) {
+audioLoader.load( audiopath, function( buffer )
+{
   sound.setBuffer( buffer );
   sound.setLoop( true );
   sound.setVolume( 0.7 );
-  sphere.add(sound);
+  sphere.add( sound );
   sound.play();
 });
 
 scene.add( sphere );
 
 sound.setRefDistance( 1 );
-sound.setDirectionalCone( 180, 250, 0.1  );
+sound.setDirectionalCone( 180, 250, 0.1 );
 
 var helper = new THREE.PositionalAudioHelper( sound, 0.1 );
 helper.rotation.y = 2 * Math.PI;
 helper.scale.set(10,10,10);
-//scene.add( helper );
 
 function onLoad()
 {
@@ -87,12 +113,30 @@ function onError()
   console.log("Error");
 }
 
-
 var render = function () {
   requestAnimationFrame( render );
-  if(isgbu)
+  if(isPropeller)
   {
-    gbu.position.z -= 0.0005;
+    sphereHelper.rotation.z -= 0.42;
+  }
+
+  if (isFrontGear)
+  {
+    if(gearUP)
+    {
+      if (gearObject[0].rotation.x < 0)
+      {
+        gearObject[0].rotation.x += 0.01;
+      }
+    }
+    else
+    {
+      if (gearObject[0].rotation.x > -2.5)
+      {
+        gearObject[0].rotation.x -= 0.01;
+      }
+    }
+    console.log(gearObject[0].rotation.x);
   }
   renderer.render(scene, camera);
 };
@@ -104,6 +148,8 @@ window.addEventListener( 'mousemove', onMouseMove, false );
 window.addEventListener( 'mousedown', onmousedownF, false );
 window.addEventListener( 'mouseup', onmouseupF, false );
 
+window.addEventListener('keypress', logKey, false);
+
 function onmousedownF()
 {
   console.log("DOWN");
@@ -112,6 +158,17 @@ function onmousedownF()
 function onmouseupF()
 {
   console.log("UP");
+}
+
+function logKey(e)
+{
+  console.log(e.keyCode);
+  switch (e.keyCode)
+  {
+    case 103:
+    gearUP = !gearUP;
+    break;
+  }
 }
 
 function onWindowResize()
@@ -123,7 +180,7 @@ function onWindowResize()
 
 function onMouseMove( event )
 {
-  mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+  mouse.x = + ( event.clientX / window.innerWidth ) * 2 - 1;
   mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
 
@@ -146,7 +203,7 @@ function getObject()
 window.requestAnimationFrame(render);
 
 
-function loadObjModel(path, url, callback, material)
+function loadObjModel(path, url, material, threeObject, callback)
 {
   loader
   .setMaterials( material )
@@ -155,21 +212,14 @@ function loadObjModel(path, url, callback, material)
     url,
     function ( object )
     {
-      object.traverse( function( node )
-      {
-          if( node.material )
-          {
-            node.material.oppacity = 1;
-          }
-      });
-      callback(object);
+      callback(object, threeObject);
     },
     onLoad(),
     onError()
   );
 }
 
-function loaderMTLTexture(path, fileName)
+function loaderMTLTexture(path, fileName, threeObject, callback = loadAircraft)
 {
   mtlLoader
   .setPath( path )
@@ -178,12 +228,12 @@ function loaderMTLTexture(path, fileName)
     function ( material )
     {
       material.preload();
-      loadObjModel( path, fileName + '.obj', loadAircraft, material );
+      loadObjModel( path, fileName + '.obj', material, threeObject, callback );
     }
   );
 }
 
-function loadAircraft(object)
+function loadAircraft(object, threeObject)
 {
   body = object;
   body.position.z = 0;
@@ -193,11 +243,38 @@ function loadAircraft(object)
   scene.add( object );
 }
 
-function loadGBU(object)
+function loadPropeller(object, threeObject)
 {
-  gbu = object;
-  isgbu = true;
-  body.add(gbu);
+  isPropeller = true;
+  object.position.z = 0;
+  object.position.x = -0.043;
+  object.position.y = 0.015;
+  object.scale.set(10,10,10);
+  sphereHelper.position.x = 0.04
+  sphereHelper.add(object)
+  scene.add(sphereHelper)
+}
+
+function loadWithPivot(object, threeObject)
+{
+  isFrontGear = true;
+
+  var helperPivot = pivotFactory();
+  helperPivot.position.z = -0.35;
+  object.position.z      = +0.30;
+
+  helperPivot.position.x = +0.043;
+  object.position.x      = -0.043;
+
+  helperPivot.position.y = -0.1;
+  object.position.y      = +0.1;
+
+  threeObject.push(helperPivot);
+
+  helperPivot.add(object);
+
+  object.scale.set(10,10,10);
+  scene.add(helperPivot)
 }
 
 render();
