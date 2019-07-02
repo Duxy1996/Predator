@@ -29,6 +29,22 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 
 document.body.appendChild( renderer.domElement );
 
+var geometry = new THREE.SphereGeometry( 0.05, 10, 10 );
+var material = new THREE.MeshBasicMaterial( {color: 0xffff00,
+                                             side: THREE.DoubleSide,
+                                             opacity: 1.0,
+                                             transparent: true,
+                                             depthWrite: false} );
+
+function pivotFactory(x = 0, y = 0, z = 0)
+{
+  var tmpMesh = new THREE.Mesh( geometry, material )
+  tmpMesh.position.z = z;
+  tmpMesh.position.y = y;
+  tmpMesh.position.x = x;
+  return tmpMesh;
+}
+
 var aircarftList = []
 
 var body = [];
@@ -60,8 +76,11 @@ var isFrontGear = false;
 var helperPivotGearF = pivotFactory(0.043, -0.1, -0.35);
 var helperPivotGearFRef = [helperPivotGearF];
 
-var helperPivotGearR = pivotFactory(0, 0, 0.30);
+var helperPivotGearR = pivotFactory(0, -0.02, 0.20);
 var helperPivotGearRRef = [helperPivotGearR];
+
+var helperPivotGearL = pivotFactory(0.1, -0.02, 0.20);
+var helperPivotGearLRef = [helperPivotGearL];
 
 
 setTimeout(function(){ loaderMTLTexture( path, fileName, threeObject, loadAircraft ); }, 1000);
@@ -70,26 +89,10 @@ setTimeout(function(){ loaderMTLTexture( path, weaponL, threeObject, loadAircraf
 setTimeout(function(){ loaderMTLTexture( path, propT, threeObject, loadPropeller ); }, 2500);
 setTimeout(function(){ loaderMTLTexture( path, gearF, gearObject, loadWithPivot, helperPivotGearFRef ); }, 3000);
 setTimeout(function(){ loaderMTLTexture( path, gearL, gearObjectR, loadWithPivot, helperPivotGearRRef ); }, 3500);
-setTimeout(function(){ loaderMTLTexture( path, gearR, gearObjectL, loadAircraft ); }, 4000);
+setTimeout(function(){ loaderMTLTexture( path, gearR, gearObjectL, loadWithPivot, helperPivotGearLRef); }, 4000);
 
 var sound     = new THREE.PositionalAudio( listener );
 var gearsound = new THREE.PositionalAudio( listener );
-
-var geometry = new THREE.SphereGeometry( 0.05, 10, 10 );
-var material = new THREE.MeshBasicMaterial( {color: 0xffff00,
-                                             side: THREE.DoubleSide,
-                                             opacity: 1.0,
-                                             transparent: true,
-                                             depthWrite: false} );
-
-function pivotFactory(x = 0, y = 0, z = 0)
-{
-  var tmpMesh = new THREE.Mesh( geometry, material )
-  tmpMesh.position.z = z;
-  tmpMesh.position.y = y;
-  tmpMesh.position.x = x;
-  return tmpMesh;
-}
 
 var sphere       = pivotFactory();
 var sphereHelper = pivotFactory();
@@ -146,7 +149,11 @@ var render = function () {
       if (gearObject[0].rotation.x < 0)
       {
         gearObject[0].rotation.x += 0.006;
-        gearObjectR[0].rotation.x += 0.004;
+        gearObjectR[0].rotation.x += 0.0037;
+        gearObjectR[0].rotation.z -= 0.0012;
+
+        gearObjectL[0].rotation.x += 0.0037;
+        gearObjectL[0].rotation.z += 0.0012;
       }
     }
     else
@@ -154,7 +161,11 @@ var render = function () {
       if (gearObject[0].rotation.x > -2.5)
       {
         gearObject[0].rotation.x -= 0.006;
-        gearObjectR[0].rotation.x -= 0.004;
+        gearObjectR[0].rotation.x -= 0.0037;
+        gearObjectR[0].rotation.z += 0.0012;
+
+        gearObjectL[0].rotation.x -= 0.0037;
+        gearObjectL[0].rotation.z -= 0.0012;
       }
     }
   }
