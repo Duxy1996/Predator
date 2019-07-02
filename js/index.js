@@ -57,14 +57,20 @@ var maxFrontGear = 360;
 var minFrontGear = 0
 var isFrontGear = false;
 
+var helperPivotGearF = pivotFactory(0.043, -0.1, -0.35);
+var helperPivotGearFRef = [helperPivotGearF];
 
-setTimeout(function(){ loaderMTLTexture( path, fileName, threeObject ); }, 1000);
-setTimeout(function(){ loaderMTLTexture( path, weaponR, threeObject ); }, 1500);
-setTimeout(function(){ loaderMTLTexture( path, weaponL, threeObject ); }, 2000);
+var helperPivotGearR = pivotFactory(0, 0, 0.30);
+var helperPivotGearRRef = [helperPivotGearR];
+
+
+setTimeout(function(){ loaderMTLTexture( path, fileName, threeObject, loadAircraft ); }, 1000);
+setTimeout(function(){ loaderMTLTexture( path, weaponR, threeObject, loadAircraft ); }, 1500);
+setTimeout(function(){ loaderMTLTexture( path, weaponL, threeObject, loadAircraft ); }, 2000);
 setTimeout(function(){ loaderMTLTexture( path, propT, threeObject, loadPropeller ); }, 2500);
-setTimeout(function(){ loaderMTLTexture( path, gearF, gearObject, loadWithPivot ); }, 3000);
-setTimeout(function(){ loaderMTLTexture( path, gearL, gearObjectR ); }, 3500);
-setTimeout(function(){ loaderMTLTexture( path, gearR, gearObjectL ); }, 4000);
+setTimeout(function(){ loaderMTLTexture( path, gearF, gearObject, loadWithPivot, helperPivotGearFRef ); }, 3000);
+setTimeout(function(){ loaderMTLTexture( path, gearL, gearObjectR, loadWithPivot, helperPivotGearRRef ); }, 3500);
+setTimeout(function(){ loaderMTLTexture( path, gearR, gearObjectL, loadAircraft ); }, 4000);
 
 var sound     = new THREE.PositionalAudio( listener );
 var gearsound = new THREE.PositionalAudio( listener );
@@ -72,13 +78,17 @@ var gearsound = new THREE.PositionalAudio( listener );
 var geometry = new THREE.SphereGeometry( 0.05, 10, 10 );
 var material = new THREE.MeshBasicMaterial( {color: 0xffff00,
                                              side: THREE.DoubleSide,
-                                             opacity: 0.0,
+                                             opacity: 1.0,
                                              transparent: true,
                                              depthWrite: false} );
 
-function pivotFactory()
+function pivotFactory(x = 0, y = 0, z = 0)
 {
-  return new THREE.Mesh( geometry, material );
+  var tmpMesh = new THREE.Mesh( geometry, material )
+  tmpMesh.position.z = z;
+  tmpMesh.position.y = y;
+  tmpMesh.position.x = x;
+  return tmpMesh;
 }
 
 var sphere       = pivotFactory();
@@ -114,12 +124,12 @@ helper.scale.set(10,10,10);
 
 function onLoad()
 {
-  console.log("Loaded");
+  //console.log("Loaded");
 }
 
 function onError()
 {
-  console.log("Error");
+  //console.log("Error");
 }
 
 var render = function () {
@@ -136,6 +146,7 @@ var render = function () {
       if (gearObject[0].rotation.x < 0)
       {
         gearObject[0].rotation.x += 0.006;
+        gearObjectR[0].rotation.x += 0.004;
       }
     }
     else
@@ -143,6 +154,7 @@ var render = function () {
       if (gearObject[0].rotation.x > -2.5)
       {
         gearObject[0].rotation.x -= 0.006;
+        gearObjectR[0].rotation.x -= 0.004;
       }
     }
   }
@@ -160,12 +172,12 @@ window.addEventListener('keypress', logKey, false);
 
 function onmousedownF()
 {
-  console.log("DOWN");
+  //console.log("DOWN");
 }
 
 function onmouseupF()
 {
-  console.log("UP");
+  //console.log("UP");
 }
 
 function logKey(e)
@@ -212,7 +224,7 @@ function getObject()
 window.requestAnimationFrame(render);
 
 
-function loadObjModel(path, url, material, threeObject, callback)
+function loadObjModel(path, url, material, threeObject, callback, pivot)
 {
   loader
   .setMaterials( material )
@@ -221,14 +233,14 @@ function loadObjModel(path, url, material, threeObject, callback)
     url,
     function ( object )
     {
-      callback(object, threeObject);
+      callback(object, threeObject, pivot);
     },
     onLoad(),
     onError()
   );
 }
 
-function loaderMTLTexture(path, fileName, threeObject, callback = loadAircraft)
+function loaderMTLTexture(path, fileName, threeObject, callback, pivot)
 {
   mtlLoader
   .setPath( path )
@@ -237,7 +249,7 @@ function loaderMTLTexture(path, fileName, threeObject, callback = loadAircraft)
     function ( material )
     {
       material.preload();
-      loadObjModel( path, fileName + '.obj', material, threeObject, callback );
+      loadObjModel( path, fileName + '.obj', material, threeObject, callback, pivot );
     }
   );
 }
@@ -264,19 +276,14 @@ function loadPropeller(object, threeObject)
   scene.add(sphereHelper)
 }
 
-function loadWithPivot(object, threeObject)
+function loadWithPivot(object, threeObject, pivot)
 {
   isFrontGear = true;
 
-  var helperPivot = pivotFactory();
-  helperPivot.position.z = -0.35;
-  object.position.z      = +0.30;
-
-  helperPivot.position.x = +0.043;
-  object.position.x      = -0.043;
-
-  helperPivot.position.y = -0.1;
-  object.position.y      = +0.1;
+  var helperPivot = pivot[0];
+  object.position.z      = - helperPivot.position.z;
+  object.position.x      = - helperPivot.position.x;
+  object.position.y      = - helperPivot.position.y;
 
   threeObject.push(helperPivot);
 
