@@ -362,4 +362,24 @@ function gearChange()
   gearsound.play();
 }
 
+function pitchUp()
+{
+  realPitch -= 0.0005
+}
+
+function pitchDown()
+{
+  realPitch += 0.0005
+}
+
+function rollRight()
+{
+  realRoll -= 0.0005
+}
+
+function rollLeft()
+{
+  realRoll += 0.0005
+}
+
 render();

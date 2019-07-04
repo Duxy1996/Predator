@@ -3,7 +3,45 @@
   width: 50px;
   border-radius: 25px;
   position: fixed;
+  background: white;
+  }
+
+@media (max-width: 900px) {
+  .float-button {
+    height: 40px;
+    width: 40px;
+    }
+}
+
+@media (max-width: 700px) {
+  .float-button {
+    height: 30px;
+    width: 30px;
+    }
+}
+
+.gear-position {
   right: 10;
   top: 5;
-  background: white;
+  }
+
+
+.pitch-up {
+  right: 48%;
+  bottom: 60;
+  }
+
+.pitch-down {
+  right: 48%;
+  bottom: 5;
+  }
+
+.roll-left {
+  right: 52%;
+  bottom: 35;
+  }
+
+.roll-right {
+  right: 44%;
+  bottom: 35;
   }
