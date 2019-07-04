@@ -21,6 +21,8 @@ var renderer = new THREE.WebGLRenderer({antialias:true});
 
 var raycaster = new THREE.Raycaster();
 
+var time = 0;
+
 var mouse = new THREE.Vector2();
 
 renderer.setClearColor("#5566FF");
@@ -29,10 +31,10 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 
 document.body.appendChild( renderer.domElement );
 
-var geometry = new THREE.SphereGeometry( 0.05, 10, 10 );
+var geometry = new THREE.SphereGeometry( 0.005, 10, 10 );
 var material = new THREE.MeshBasicMaterial( {color: 0xffff00,
                                              side: THREE.DoubleSide,
-                                             opacity: 1.0,
+                                             opacity: 0.0,
                                              transparent: true,
                                              depthWrite: false} );
 
@@ -45,11 +47,27 @@ function pivotFactory(x = 0, y = 0, z = 0)
   return tmpMesh;
 }
 
+function getAxisBetweenTwoPoints(pointA,pointB)
+{
+  var posX = pointA.x - pointB.x;
+  var posY = pointA.y - pointB.y;
+  var posZ = pointA.z - pointB.z;
+
+  var norm  = Math.sqrt(posX*posX+posY*posY+posZ*posZ);
+
+  var axis  = new THREE.Vector3(posX/norm,posY/norm,posZ/norm);
+
+  return axis;
+}
+
 var aircarftList = []
 
 var body = [];
 var propeller;
 var isPropeller;
+
+var realPitch =  0;
+var realRoll  =  0;
 
 var path      = './objects/MQ-9-Predator/';
 var audiopath = './objects/MQ-9-Predator-Audio/Prop.mp3';
@@ -62,30 +80,38 @@ var gearF     = 'Front-wheel';
 var gearL     = 'Left-wheel';
 var gearR     = 'Right-wheel';
 
-var threeObject = [];
-var gearObject = [];
-var gearObjectR = [];
-var gearObjectL = [];
+var threeObject  = [];
+var bodyAircraft = []
+var gearObject   = [];
+var gearObjectR  = [];
+var gearObjectL  = [];
 
 
-var gearUP = true;
+var gearUP       = true;
 var maxFrontGear = 360;
 var minFrontGear = 0
-var isFrontGear = false;
+var isFrontGear  = false;
 
-var helperPivotGearF = pivotFactory(0.043, -0.1, -0.35);
+
+var helperPivoteGBUL = pivotFactory(0, 0, 0);
+var helperPivoteGBULRef = [helperPivoteGBUL];
+
+var helperPivoteGBUR = pivotFactory(0, 0, 0);
+var helperPivoteGBURRef = [helperPivoteGBUR];
+
+var helperPivotGearF = pivotFactory(0.0043, -0.01, -0.035);
 var helperPivotGearFRef = [helperPivotGearF];
 
-var helperPivotGearR = pivotFactory(0, -0.02, 0.20);
+var helperPivotGearR = pivotFactory(0, -0.002, 0.020);
 var helperPivotGearRRef = [helperPivotGearR];
 
-var helperPivotGearL = pivotFactory(0.1, -0.02, 0.20);
+var helperPivotGearL = pivotFactory(0.01, -0.002, 0.020);
 var helperPivotGearLRef = [helperPivotGearL];
 
 
-setTimeout(function(){ loaderMTLTexture( path, fileName, threeObject, loadAircraft ); }, 1000);
-setTimeout(function(){ loaderMTLTexture( path, weaponR, threeObject, loadAircraft ); }, 1500);
-setTimeout(function(){ loaderMTLTexture( path, weaponL, threeObject, loadAircraft ); }, 2000);
+setTimeout(function(){ loaderMTLTexture( path, fileName, bodyAircraft, loadAircraft ); }, 500);
+setTimeout(function(){ loaderMTLTexture( path, weaponR, threeObject, loadWithPivot, helperPivoteGBURRef ); }, 1500);
+setTimeout(function(){ loaderMTLTexture( path, weaponL, threeObject, loadWithPivot, helperPivoteGBULRef ); }, 2000);
 setTimeout(function(){ loaderMTLTexture( path, propT, threeObject, loadPropeller ); }, 2500);
 setTimeout(function(){ loaderMTLTexture( path, gearF, gearObject, loadWithPivot, helperPivotGearFRef ); }, 3000);
 setTimeout(function(){ loaderMTLTexture( path, gearL, gearObjectR, loadWithPivot, helperPivotGearRRef ); }, 3500);
@@ -95,7 +121,7 @@ var sound     = new THREE.PositionalAudio( listener );
 var gearsound = new THREE.PositionalAudio( listener );
 
 var sphere       = pivotFactory();
-var sphereHelper = pivotFactory();
+var sphereHelper = [pivotFactory()];
 
 sphere.rotation.y = 2 * Math.PI;
 
@@ -116,7 +142,7 @@ audioLoader.load( gearpath, function( buffer )
   gearsound.setVolume( 0.7 );
 });
 
-scene.add( sphere );
+//scene.add( sphere );
 
 sound.setRefDistance( 1 );
 sound.setDirectionalCone( 180, 250, 0.1 );
@@ -139,7 +165,20 @@ var render = function () {
   requestAnimationFrame( render );
   if(isPropeller)
   {
-    sphereHelper.rotation.z -= 0.42;
+    sphereHelper[0].rotation.z -= 0.42;
+  }
+
+  if (bodyAircraft.length > 0)
+  {
+    bodyAircraft[0].rotateX( realPitch );
+    bodyAircraft[0].rotateZ( realRoll );
+    bodyAircraft[0].add(helperPivoteGBULRef[0]);
+    bodyAircraft[0].add(helperPivotGearFRef[0]);
+    bodyAircraft[0].add(helperPivotGearLRef[0]);
+    bodyAircraft[0].add(helperPivotGearRRef[0]);
+    bodyAircraft[0].add(helperPivoteGBURRef[0]);
+    bodyAircraft[0].add(sphereHelper[0]);
+    bodyAircraft[0].add(sphere)
   }
 
   if (isFrontGear)
@@ -197,9 +236,21 @@ function logKey(e)
   switch (e.keyCode)
   {
     case 103:
-    gearUP = !gearUP;
-    gearsound.play();
-    break;
+      gearUP = !gearUP;
+      gearsound.play();
+      break;
+    case 56:
+      realPitch -=0.0001
+      break;
+    case 50:
+      realPitch +=0.0001
+      break;
+    case 52:
+      realRoll +=0.0001
+      break;
+    case 54:
+      realRoll -=0.0001
+      break;
   }
 }
 
@@ -272,6 +323,8 @@ function loadAircraft(object, threeObject)
   body.position.x = 0;
   body.position.y = 0;
   body.scale.set(10,10,10);
+  console.log(body)
+  threeObject.push(body)
   scene.add( object );
 }
 
@@ -279,12 +332,11 @@ function loadPropeller(object, threeObject)
 {
   isPropeller = true;
   object.position.z = 0;
-  object.position.x = -0.043;
-  object.position.y = 0.015;
-  object.scale.set(10,10,10);
-  sphereHelper.position.x = 0.04
-  sphereHelper.add(object)
-  scene.add(sphereHelper)
+  object.position.x = -0.0043;
+  object.position.y = 0.0015;
+  sphereHelper[0].position.x = 0.004
+  sphereHelper[0].add(object)
+  scene.add(sphereHelper[0])
 }
 
 function loadWithPivot(object, threeObject, pivot)
@@ -300,8 +352,8 @@ function loadWithPivot(object, threeObject, pivot)
 
   helperPivot.add(object);
 
-  object.scale.set(10,10,10);
-  scene.add(helperPivot)
+  //object.scale.set(10,10,10);
+  //scene.add(helperPivot)
 }
 
 function gearChange()
