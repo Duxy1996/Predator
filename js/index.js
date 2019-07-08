@@ -23,6 +23,10 @@ var raycaster = new THREE.Raycaster();
 
 var time = 0;
 
+var holdHeading = false;
+var locX = 0;
+var locY = 0;
+
 var mouse = new THREE.Vector2();
 
 renderer.setClearColor("#5566FF");
@@ -171,7 +175,9 @@ var render = function () {
   if (bodyAircraft.length > 0)
   {
     bodyAircraft[0].rotateX( realPitch );
+    locX += realPitch;
     bodyAircraft[0].rotateZ( realRoll );
+    locY += realRoll;
     bodyAircraft[0].add(helperPivoteGBULRef[0]);
     bodyAircraft[0].add(helperPivotGearFRef[0]);
     bodyAircraft[0].add(helperPivotGearLRef[0]);
@@ -185,14 +191,17 @@ var render = function () {
   {
     if(gearUP)
     {
-      if (gearObject[0].rotation.x < 0)
+      if(gearObject[0] != undefined)
       {
-        gearObject[0].rotation.x += 0.006;
-        gearObjectR[0].rotation.x += 0.0037;
-        gearObjectR[0].rotation.z -= 0.0012;
+        if (gearObject[0].rotation.x < 0)
+        {
+          gearObject[0].rotation.x += 0.006;
+          gearObjectR[0].rotation.x += 0.0037;
+          gearObjectR[0].rotation.z -= 0.0012;
 
-        gearObjectL[0].rotation.x += 0.0037;
-        gearObjectL[0].rotation.z += 0.0012;
+          gearObjectL[0].rotation.x += 0.0037;
+          gearObjectL[0].rotation.z += 0.0012;
+        }
       }
     }
     else
@@ -208,6 +217,36 @@ var render = function () {
       }
     }
   }
+
+  if(bodyAircraft[0] != undefined)
+  {
+    if (holdHeading)
+    {
+      if ( locX < 0 )
+      {
+        var tmpPitch = -locX * 0.01;
+        if (tmpPitch > 0.002)
+        {
+          tmpPitch = 0.002;
+        }
+        realPitch = tmpPitch;
+      }
+      if ( locX > 0 )
+      {
+        realPitch = -0.001;
+      }
+
+      if ( locY < 0 )
+      {
+        realRoll = +0.001;
+      }
+      if ( locY > 0 )
+      {
+        realRoll = -0.001;
+      }
+    }
+  }
+
   renderer.render(scene, camera);
 };
 
@@ -323,7 +362,6 @@ function loadAircraft(object, threeObject)
   body.position.x = 0;
   body.position.y = 0;
   body.scale.set(10,10,10);
-  console.log(body)
   threeObject.push(body)
   scene.add( object );
 }
@@ -380,6 +418,16 @@ function rollRight()
 function rollLeft()
 {
   realRoll += 0.0005
+}
+
+function heading()
+{
+  holdHeading = !holdHeading
+  if (!holdHeading)
+  {
+    realRoll = 0;
+    realPitch = 0;
+  }
 }
 
 render();

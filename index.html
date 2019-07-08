@@ -15,10 +15,14 @@
     <!--  Our code  -->
     <div class="float-button gear-position" onclick="gearChange()"></div>
 
-    <div class="float-button roll-left" onclick="rollLeft()"></div>
-    <div class="float-button roll-right" onclick="rollRight()"></div>
-    <div class="float-button pitch-up" onclick="pitchUp()"></div>
-    <div class="float-button pitch-down" onclick="pitchDown()"></div>
+    <div class="float-button-big heading-position" onclick="heading()"></div>
+    <div class="float-button-big altitude-position" onclick="holdAltitude()"></div>
+    <div class="float-button-big hold-speed" onclick="holdSpeed()"></div>
+
+    <div class="float-button roll-left" onclick="rollLeft()"><img class="roll-right-img" src="assets/noun_Plane_2259237.svg" alt="plane rotating"></div>
+    <div class="float-button roll-right" onclick="rollRight()"><img class="roll-left-img" src="assets/noun_Plane_2259237.svg" alt="plane rotating"></div>
+    <div class="float-button pitch-up" onclick="pitchUp()"><img class="roll-right-img" src="assets/noun_Plane_2259236.svg" alt="plane rotating"></div>
+    <div class="float-button pitch-down" onclick="pitchDown()"><img class="roll-left-img" src="assets/noun_Plane_2259236.svg" alt="plane rotating"></div>
 
 
     <script src="js/OBJLoader.js"></script>

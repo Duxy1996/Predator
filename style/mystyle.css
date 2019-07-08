@@ -6,25 +6,18 @@
   background: white;
   }
 
-@media (max-width: 900px) {
-  .float-button {
-    height: 40px;
-    width: 40px;
-    }
-}
-
-@media (max-width: 700px) {
-  .float-button {
-    height: 30px;
-    width: 30px;
-    }
-}
+.float-button-big {
+  height: 80px;
+  width: 80px;
+  border-radius: 45px;
+  position: fixed;
+  background: white;
+  }
 
 .gear-position {
   right: 10;
   top: 5;
   }
-
 
 .pitch-up {
   right: 48%;
@@ -38,10 +31,63 @@
 
 .roll-left {
   right: 52%;
-  bottom: 35;
+  bottom: 32;
   }
 
 .roll-right {
   right: 44%;
-  bottom: 35;
+  bottom: 32;
   }
+
+.roll-right-img {
+    width: 100%;
+    height: auto;
+    transform: rotate(-20deg);
+  }
+
+.roll-left-img {
+  width: 100%;
+  height: auto;
+  transform: rotate(+20deg);
+}
+
+.heading-position {
+  left: 5;
+  bottom: 50%;
+}
+
+.altitude-position {
+  left: 5;
+  bottom: 65%;
+}
+
+.hold-speed {
+  left: 5;
+  bottom: 35%;
+}
+
+@media (max-aspect-ratio: 12/8) {
+    .float-button {
+      height: 60px;
+      width: 60px;
+      border-radius: 30px;
+      position: absolute;
+      background: white;
+    }
+    .pitch-up {
+      right: 5;
+      bottom: 80;
+    }
+    .pitch-down {
+      right: 5;
+      bottom: 5;
+    }
+    .roll-left {
+      left: 80;
+      bottom: 42;
+    }
+    .roll-right {
+      left: 5;
+      bottom: 42;
+    }
+}
