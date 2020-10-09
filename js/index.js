@@ -1,4 +1,7 @@
 
+let speedY = 0;
+let speedZ = 0;
+
 var loader    = new THREE.OBJLoader();
 
 var mtlLoader = new THREE.MTLLoader();
@@ -6,6 +9,49 @@ var mtlLoader = new THREE.MTLLoader();
 var listener = new THREE.AudioListener();
 
 var scene = new THREE.Scene();
+
+noise.seed(Math.random());
+
+let resolution = 35;
+let muntains = 7;
+
+for (let i = 0; i < 50; i=i+2)
+{
+  for (let j = 0; j < 50; j=j+2)
+  {
+    let geometryTEst = new THREE.BoxGeometry( 2, 2, 2 );
+    let materialTest = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+    let cubeTest = new THREE.Mesh( geometryTEst, materialTest );
+    let perlingVal = Math.abs(noise.simplex2(i/ resolution, j/ resolution)) * muntains;
+    cubeTest.position.y = perlingVal - 10;
+    cubeTest.position.x = - 25 + i * 1;
+    cubeTest.position.z = - 25 + j * 1;
+    
+    cubeTest.material.color.r = perlingVal / 5;
+    cubeTest.material.color.g = perlingVal / 5;
+    cubeTest.material.color.b = perlingVal / 5;
+    
+    scene.add( cubeTest );
+  }
+}
+
+var geometry = new THREE.PlaneGeometry( 2, 2, 4, 4 );
+var material = new THREE.MeshBasicMaterial( { color: 0xffffff, flatShading : THREE.FlatShading, side: THREE.DoubleSide, vertexColors: THREE.FaceColors} );
+var plane = new THREE.Mesh( geometry, material );
+plane.geometry.faces[2].color.r = 0;
+plane.geometry.faces[7].color.r = 0;
+plane.geometry.faces[5].color.setRGB(0,255,0);
+
+geometry.vertices[0].z =  1.2;
+geometry.vertices[1].z =  1.3;
+
+geometry.dynamic = true;
+geometry.__dirtyVertices = true;
+geometry.__dirtyNormals = true;
+
+scene.add( plane );
+plane.geometry.faces[8].color.setRGB(0,255,0);
+
 
 var camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
 camera.position.z = 4;
@@ -130,6 +176,7 @@ var sphereHelper = [pivotFactory()];
 sphere.rotation.y = 2 * Math.PI;
 
 var audioLoader = new THREE.AudioLoader();
+
 audioLoader.load( audiopath, function( buffer )
 {
   sound.setBuffer( buffer );
@@ -166,7 +213,24 @@ function onError()
 }
 
 var render = function () {
+
   requestAnimationFrame( render );
+
+  if (body.position != undefined)
+  {
+    body.position.z -= 0.00000000000000000000000005;
+
+    body.position.y += locX / 100;
+    body.position.x -= locY / 500;
+
+    controls.target.z = body.position.z;
+    controls.target.x = body.position.x;
+    controls.target.y = body.position.y;
+  }
+  
+  controls.update();
+
+
   if(isPropeller)
   {
     sphereHelper[0].rotation.z -= 0.42;
@@ -245,7 +309,7 @@ var render = function () {
         realRoll = -0.001;
       }
     }
-  }
+  }  
 
   renderer.render(scene, camera);
 };
@@ -262,11 +326,13 @@ window.addEventListener('keypress', logKey, false);
 function onmousedownF()
 {
   //console.log("DOWN");
+  
 }
 
 function onmouseupF()
 {
   //console.log("UP");
+  
 }
 
 function logKey(e)
@@ -308,15 +374,15 @@ function onMouseMove( event )
 
 function getObject()
 {
-  raycaster.setFromCamera( mouse, camera );
+  // raycaster.setFromCamera( mouse, camera );
 
-  var intersects = raycaster.intersectObjects( scene.children );
+  // var intersects = raycaster.intersectObjects( scene.children );
 
-  for ( var i = 0; i < intersects.length; i++ )
-  {
-    intersects[ i ].object.material.color.set( 0xffff00 );
-  }
-  renderer.render( scene, camera );
+  // for ( var i = 0; i < intersects.length; i++ )
+  // {
+  //   intersects[ i ].object.material.color.set( 0xffff00 );
+  // }
+  // renderer.render( scene, camera );
 
   //scene.add(new THREE.ArrowHelper(raycaster.ray.direction, raycaster.ray.origin, 300, 0xff0000) );
 }
@@ -363,7 +429,7 @@ function loadAircraft(object, threeObject)
   body.position.y = 0;
   body.scale.set(10,10,10);
   threeObject.push(body)
-  scene.add( object );
+  scene.add( body );
 }
 
 function loadPropeller(object, threeObject)
