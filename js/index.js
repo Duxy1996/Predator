@@ -12,46 +12,65 @@ var scene = new THREE.Scene();
 
 noise.seed(Math.random());
 
-let resolution = 35;
-let muntains = 7;
+let resolution = 60;
+let muntains = 6;
 
-for (let i = 0; i < 50; i=i+2)
-{
-  for (let j = 0; j < 50; j=j+2)
-  {
-    let geometryTEst = new THREE.BoxGeometry( 2, 2, 2 );
-    let materialTest = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
-    let cubeTest = new THREE.Mesh( geometryTEst, materialTest );
-    let perlingVal = Math.abs(noise.simplex2(i/ resolution, j/ resolution)) * muntains;
-    cubeTest.position.y = perlingVal - 10;
-    cubeTest.position.x = - 25 + i * 1;
-    cubeTest.position.z = - 25 + j * 1;
-    
-    cubeTest.material.color.r = perlingVal / 5;
-    cubeTest.material.color.g = perlingVal / 5;
-    cubeTest.material.color.b = perlingVal / 5;
-    
-    scene.add( cubeTest );
-  }
-}
+let columns = 500;
+let rows    = 500;
 
-var geometry = new THREE.PlaneGeometry( 2, 2, 4, 4 );
+let sizeX = 500;
+let sizeY = 500;
+
+var geometry = new THREE.PlaneGeometry( sizeX, sizeY, rows, columns );
 var material = new THREE.MeshBasicMaterial( { color: 0xffffff, flatShading : THREE.FlatShading, side: THREE.DoubleSide, vertexColors: THREE.FaceColors} );
 var plane = new THREE.Mesh( geometry, material );
-plane.geometry.faces[2].color.r = 0;
-plane.geometry.faces[7].color.r = 0;
-plane.geometry.faces[5].color.setRGB(0,255,0);
 
-geometry.vertices[0].z =  1.2;
-geometry.vertices[1].z =  1.3;
+plane.rotateX(-3.14 / 2);
+plane.position.y = -6;
+
+columns = columns + 1;
+rows    = rows + 1;
+
+for (let i = 0; i < columns; i=i+1)
+{
+  for (let j = 0; j < rows; j=j+1)
+  {
+    let offset = j + i * rows;
+    let perlingVal = Math.abs(noise.simplex2(i/ resolution, j/ resolution)) * muntains;
+
+    geometry.vertices[offset].z = perlingVal;
+
+    let r_v = 0;
+    let g_v = perlingVal / muntains;
+    let b_v = 0;
+
+    if (perlingVal < 1)
+    {
+      geometry.vertices[offset].z = 1 ;
+      b_v = 1;
+      g_v = 0;
+    }
+
+    if (perlingVal > 5)
+    {
+      r_v = 1;
+      g_v = 1;
+      b_v = 1;
+    }
+
+    if (offset < plane.geometry.faces.length / 2 + columns - 2)
+    {
+      plane.geometry.faces[offset * 2 + 1 - i * 2].color.setRGB(r_v, g_v, b_v);
+      plane.geometry.faces[offset * 2 + 0 - i * 2].color.setRGB(r_v, g_v, b_v);
+    }
+  }
+}
 
 geometry.dynamic = true;
 geometry.__dirtyVertices = true;
 geometry.__dirtyNormals = true;
 
 scene.add( plane );
-plane.geometry.faces[8].color.setRGB(0,255,0);
-
 
 var camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
 camera.position.z = 4;
@@ -137,7 +156,7 @@ var gearObjectR  = [];
 var gearObjectL  = [];
 
 
-var gearUP       = true;
+var gearUP       = false;
 var maxFrontGear = 360;
 var minFrontGear = 0
 var isFrontGear  = false;
@@ -218,7 +237,7 @@ var render = function () {
 
   if (body.position != undefined)
   {
-    body.position.z -= 0.00000000000000000000000005;
+    body.position.z -= 0.005;
 
     body.position.y += locX / 100;
     body.position.x -= locY / 500;
@@ -227,7 +246,7 @@ var render = function () {
     controls.target.x = body.position.x;
     controls.target.y = body.position.y;
   }
-  
+
   controls.update();
 
 
@@ -309,7 +328,7 @@ var render = function () {
         realRoll = -0.001;
       }
     }
-  }  
+  }
 
   renderer.render(scene, camera);
 };
@@ -326,13 +345,13 @@ window.addEventListener('keypress', logKey, false);
 function onmousedownF()
 {
   //console.log("DOWN");
-  
+
 }
 
 function onmouseupF()
 {
   //console.log("UP");
-  
+
 }
 
 function logKey(e)
