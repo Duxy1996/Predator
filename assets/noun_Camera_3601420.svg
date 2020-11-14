@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
+   sodipodi:docname="noun_Camera_3601420.svg"
+   id="svg18"
+   version="1.1"
+   y="0px"
+   x="0px"
+   viewBox="0 0 512 640"
+   data-name="Layer 1">
+  <metadata
+     id="metadata24">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs22" />
+  <sodipodi:namedview
+     inkscape:current-layer="svg18"
+     inkscape:window-maximized="1"
+     inkscape:window-y="-9"
+     inkscape:window-x="-9"
+     inkscape:cy="285.46044"
+     inkscape:cx="154.71867"
+     inkscape:zoom="0.59405071"
+     showgrid="false"
+     id="namedview20"
+     inkscape:window-height="1001"
+     inkscape:window-width="1920"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0"
+     guidetolerance="10"
+     gridtolerance="10"
+     objecttolerance="10"
+     borderopacity="1"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     inkscape:document-rotation="0" />
+  <title
+     id="title2">Artboard 32</title>
+  <path
+     style="stroke-width:1.28313"
+     id="path4"
+     d="m 267.61649,443.93673 a 64.255077,64.255077 0 1 0 -64.25508,-64.25508 64.326932,64.326932 0 0 0 64.25508,64.25508 z M 250.44186,336.01176 a 29.357912,29.357912 0 1 1 -29.35792,29.35663 29.391273,29.391273 0 0 1 29.35792,-29.35663 z" />
+  <circle
+     style="stroke-width:1.28313"
+     id="circle6"
+     r="13.959123"
+     cy="365.36838"
+     cx="250.44183" />
+  <rect
+     style="stroke-width:1.28313"
+     id="rect8"
+     height="65.4394"
+     width="441.39517"
+     y="68.027145"
+     x="46.918896" />
+  <path
+     style="stroke-width:1.28313"
+     id="path10"
+     d="m 267.61649,491.64975 a 111.9681,111.9681 0 1 0 -111.9681,-111.9681 112.09513,112.09513 0 0 0 111.9681,111.9681 z m 0,-191.62068 a 79.652584,79.652584 0 1 1 -79.65258,79.65258 79.742403,79.742403 0 0 1 79.65258,-79.65258 z" />
+  <path
+     style="stroke-width:1.28313"
+     id="path12"
+     d="m 267.61649,570.69157 c 104.06148,0 188.61946,-84.66319 188.61946,-188.7298 V 148.86405 H 78.997038 v 233.09772 c 0,104.06661 84.557972,188.7298 188.619452,188.7298 z m 0,-318.37553 a 127.36561,127.36561 0 1 1 -127.3656,127.36561 127.50932,127.50932 0 0 1 127.3656,-127.36561 z" />
+</svg>

@@ -45,8 +45,13 @@
 
 .gear-position {
   right: 10;
-  top: 5;
+  top: 5%;
   }
+
+.camera-position {
+  right: 10;
+  top: 15%;
+}
 
 .pitch-up {
   left: 40%;
@@ -70,7 +75,7 @@
 
 .landing-gear {
   height: 100%;
-  width: auto;
+  width: 100%;
 }
 
 .roll-right-img {
