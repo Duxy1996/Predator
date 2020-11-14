@@ -16,7 +16,7 @@ function initTerrain() {
   var material = new THREE.MeshBasicMaterial( { color: 0xffffff, flatShading : THREE.FlatShading, side: THREE.DoubleSide, vertexColors: THREE.FaceColors} );
   var plane = new THREE.Mesh( geometry, material );
 
-  plane.rotateX(Math.PI / 2);
+  plane.rotateX(-Math.PI / 2);
   plane.position.y = -20;
 
   columns = columns + 1;
