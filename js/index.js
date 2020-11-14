@@ -9,7 +9,13 @@ var scene        = new THREE.Scene();
 var ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
 
 let plane = initTerrain()
+
 let camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
+
+let cameraDrone = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
+
+cameraDrone.position.z = -1;
+
 camera.position.z = 4;
 
 camera.add( listener );
@@ -170,10 +176,11 @@ var render = function () {
 
   if (body.position != undefined)
   {
-    body.position.z -= 0.005;
+    var direction = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( body.quaternion );
 
-    body.position.y += locX / 100;
-    body.position.x -= locY / 500;
+    body.position.x += direction.x * 0.01;
+    body.position.y += direction.y * 0.01;
+    body.position.z += direction.z * 0.01;
 
     controls.target.z = body.position.z;
     controls.target.x = body.position.x;
@@ -190,9 +197,7 @@ var render = function () {
   if (bodyAircraft.length > 0)
   {
     bodyAircraft[0].rotateX( realPitch );
-    locX += realPitch;
     bodyAircraft[0].rotateZ( realRoll );
-    locY += realRoll;
     bodyAircraft[0].add(helperPivoteGBULRef[0]);
     bodyAircraft[0].add(helperPivotGearFRef[0]);
     bodyAircraft[0].add(helperPivotGearLRef[0]);
@@ -200,6 +205,8 @@ var render = function () {
     bodyAircraft[0].add(helperPivoteGBURRef[0]);
     bodyAircraft[0].add(sphereHelper[0]);
     bodyAircraft[0].add(sphere)
+    locX += realPitch;
+    locY += realRoll;
   }
 
   if (isFrontGear)
@@ -235,6 +242,7 @@ var render = function () {
 
   if(bodyAircraft[0] != undefined)
   {
+    //console.log(bodyAircraft[0].rotation);
     if (holdHeading)
     {
       if ( locX < 0 )
@@ -345,6 +353,7 @@ function loadAircraft(object, threeObject)
   body.position.x = 0;
   body.position.y = 0;
   body.scale.set(10,10,10);
+  body.add(cameraDrone);
   threeObject.push(body)
   scene.add( body );
 }
@@ -378,6 +387,14 @@ function gearChange()
 {
   gearUP = !gearUP;
   gearsound.play();
+
+}
+
+function cameraPosition()
+{
+  let cameraHelper = camera;
+  camera           = cameraDrone;
+  cameraDrone      = cameraHelper;
 }
 
 function pitchUp()
