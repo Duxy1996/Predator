@@ -1,5 +1,6 @@
 <html lang="en">
   <head>
+    <link rel="stylesheet" type="text/css" href="https://meyerweb.com/eric/tools/css/reset/reset200802.css">
     <link rel="stylesheet" type="text/css" href="style/mystyle.css">
     <meta charset="UTF-8" />
     <title>Predator</title>
@@ -10,11 +11,25 @@
     </style>
   </head>
   <body>
-    <div class="float-button gear-position" onclick="gearChange()"></div>
+    <div class="float-button gear-position" onclick="gearChange()"><img class="landing-gear" src="assets/noun_plane wheel_1671535.svg" alt="plane rotating"></div>
 
-    <div class="float-button-big heading-position" onclick="heading()"></div>
-    <div class="float-button-big altitude-position" onclick="holdAltitude()"></div>
-    <div class="float-button-big hold-speed" onclick="holdSpeed()"></div>
+    <div class="float-button-big heading-position" onclick="heading()">
+      <div class="float-button-big-content">
+        <p class="center-text">HDG</p>
+      </div>
+    </div>
+
+    <div class="float-button-big altitude-position" onclick="holdAltitude()">
+      <div class="float-button-big-content">
+        <p class="center-text">ALT</p>
+      </div>
+    </div>
+
+    <div class="float-button-big hold-speed" onclick="holdSpeed()">
+      <div class="float-button-big-content">
+        <p class="center-text">SPD</p>
+      </div>
+    </div>
 
     <div class="float-button roll-left" onclick="rollLeft()"><img class="roll-right-img" src="assets/noun_Plane_2259237.svg" alt="plane rotating"></div>
     <div class="float-button roll-right" onclick="rollRight()"><img class="roll-left-img" src="assets/noun_Plane_2259237.svg" alt="plane rotating"></div>
@@ -26,6 +41,7 @@
     <script src="js/MTLLoader.js"></script>
     <script src="js/OrbitControls.js"></script>
     <script src="js/Gauge.js"></script>
+    <script src="js/terrain.js"></script>
     <script src="js/index.js"></script>
   </body>
 </html>

@@ -2,91 +2,24 @@
 let speedY = 0;
 let speedZ = 0;
 
-var loader    = new THREE.OBJLoader();
-
-var mtlLoader = new THREE.MTLLoader();
-
-var listener = new THREE.AudioListener();
-
-var scene = new THREE.Scene();
-
-noise.seed(Math.random());
-
-let resolution = 60;
-let muntains = 6;
-
-let columns = 500;
-let rows    = 500;
-
-let sizeX = 500;
-let sizeY = 500;
-
-var geometry = new THREE.PlaneGeometry( sizeX, sizeY, rows, columns );
-var material = new THREE.MeshBasicMaterial( { color: 0xffffff, flatShading : THREE.FlatShading, side: THREE.DoubleSide, vertexColors: THREE.FaceColors} );
-var plane = new THREE.Mesh( geometry, material );
-
-plane.rotateX(-3.14 / 2);
-plane.position.y = -6;
-
-columns = columns + 1;
-rows    = rows + 1;
-
-for (let i = 0; i < columns; i=i+1)
-{
-  for (let j = 0; j < rows; j=j+1)
-  {
-    let offset = j + i * rows;
-    let perlingVal = Math.abs(noise.simplex2(i/ resolution, j/ resolution)) * muntains;
-
-    geometry.vertices[offset].z = perlingVal;
-
-    let r_v = 0;
-    let g_v = perlingVal / muntains;
-    let b_v = 0;
-
-    if (perlingVal < 1)
-    {
-      geometry.vertices[offset].z = 1 ;
-      b_v = 1;
-      g_v = 0;
-    }
-
-    if (perlingVal > 5)
-    {
-      r_v = 1;
-      g_v = 1;
-      b_v = 1;
-    }
-
-    if (offset < plane.geometry.faces.length / 2 + columns - 2)
-    {
-      plane.geometry.faces[offset * 2 + 1 - i * 2].color.setRGB(r_v, g_v, b_v);
-      plane.geometry.faces[offset * 2 + 0 - i * 2].color.setRGB(r_v, g_v, b_v);
-    }
-  }
-}
-
-geometry.dynamic = true;
-geometry.__dirtyVertices = true;
-geometry.__dirtyNormals = true;
-
-scene.add( plane );
-
-var camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
-camera.position.z = 4;
-camera.add( listener );
-
+var loader       = new THREE.OBJLoader();
+var mtlLoader    = new THREE.MTLLoader();
+var listener     = new THREE.AudioListener();
+var scene        = new THREE.Scene();
 var ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
 
+let plane = initTerrain()
+let camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
+camera.position.z = 4;
+
+camera.add( listener );
+
+scene.add( plane );
 scene.add( ambientLight );
 
 var controls = new THREE.OrbitControls( camera );
-
 var renderer = new THREE.WebGLRenderer({antialias:true});
-
 var raycaster = new THREE.Raycaster();
-
-var time = 0;
 
 var holdHeading = false;
 var locX = 0;
@@ -156,7 +89,7 @@ var gearObjectR  = [];
 var gearObjectL  = [];
 
 
-var gearUP       = false;
+var gearUP       = true;
 var maxFrontGear = 360;
 var minFrontGear = 0
 var isFrontGear  = false;
@@ -249,7 +182,6 @@ var render = function () {
 
   controls.update();
 
-
   if(isPropeller)
   {
     sphereHelper[0].rotation.z -= 0.42;
@@ -334,25 +266,8 @@ var render = function () {
 };
 
 window.addEventListener( 'resize', onWindowResize, false );
-window.addEventListener( 'click' , getObject, false);
 window.addEventListener( 'mousemove', onMouseMove, false );
-
-window.addEventListener( 'mousedown', onmousedownF, false );
-window.addEventListener( 'mouseup', onmouseupF, false );
-
 window.addEventListener('keypress', logKey, false);
-
-function onmousedownF()
-{
-  //console.log("DOWN");
-
-}
-
-function onmouseupF()
-{
-  //console.log("UP");
-
-}
 
 function logKey(e)
 {
@@ -391,24 +306,7 @@ function onMouseMove( event )
   mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
 
-function getObject()
-{
-  // raycaster.setFromCamera( mouse, camera );
-
-  // var intersects = raycaster.intersectObjects( scene.children );
-
-  // for ( var i = 0; i < intersects.length; i++ )
-  // {
-  //   intersects[ i ].object.material.color.set( 0xffff00 );
-  // }
-  // renderer.render( scene, camera );
-
-  //scene.add(new THREE.ArrowHelper(raycaster.ray.direction, raycaster.ray.origin, 300, 0xff0000) );
-}
-
-
 window.requestAnimationFrame(render);
-
 
 function loadObjModel(path, url, material, threeObject, callback, pivot)
 {
@@ -474,9 +372,6 @@ function loadWithPivot(object, threeObject, pivot)
   threeObject.push(helperPivot);
 
   helperPivot.add(object);
-
-  //object.scale.set(10,10,10);
-  //scene.add(helperPivot)
 }
 
 function gearChange()
