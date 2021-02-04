@@ -17,8 +17,12 @@ camera.add( listener );
 scene.add( plane );
 scene.add( ambientLight );
 
-var controls = new THREE.OrbitControls( camera );
-var renderer = new THREE.WebGLRenderer({antialias:true});
+document.getElementById("throttle").value = 50;
+var commandedThrust = document.getElementById("throttle").value;
+var currentThrust   = 50;
+
+var renderer  = new THREE.WebGLRenderer({antialias:true});
+var controls  = new THREE.OrbitControls( camera, renderer.domElement );
 var raycaster = new THREE.Raycaster();
 
 var holdHeading = false;
@@ -173,9 +177,45 @@ var render = function () {
   {
     let direction = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( body.quaternion );
 
-    body.position.x += direction.x * 0.01;
-    body.position.y += direction.y * 0.01;
-    body.position.z += direction.z * 0.01;
+    commandedThrust = document.getElementById("throttle").value;
+
+    if (commandedThrust > currentThrust)
+    {
+      currentThrust = currentThrust + 0.05;
+    }
+
+    if (commandedThrust < currentThrust)
+    {
+      currentThrust = currentThrust - 0.05;
+    }
+
+    generalThrust = 0.0005 * currentThrust;
+
+    currentSpeed = Math.round(generalThrust * 43400) / 10;
+
+    document.getElementById("speedMeter").innerHTML = currentSpeed + "\n Km/h";
+
+    let stallDelta  = 1;
+    let stallDeltaM = 0;
+
+    if (currentSpeed < 70)
+    {
+      stallDelta = -1.2;
+      stallDeltaM = 0.005;
+    }
+    else if (currentSpeed < 80)
+    {
+      stallDelta = -1.0;
+      stallDeltaM = 0.001;
+    }
+    else if (currentSpeed < 90)
+    {
+      //console.log("Caution STALL");
+    }
+
+    body.position.x += direction.x * generalThrust;
+    body.position.y += direction.y * generalThrust * stallDelta - stallDeltaM;
+    body.position.z += direction.z * generalThrust;
 
     controls.target.z = body.position.z;
     controls.target.x = body.position.x;
@@ -319,7 +359,7 @@ function loadObjModel(path, url, material, threeObject, callback, pivot)
   );
 }
 
-function loaderMTLTexture(path, fileName, threeObject, callback, pivot)
+function loaderMTLTexture(resolve, path, fileName, threeObject, callback, pivot)
 {
   mtlLoader
   .setPath( path )
@@ -329,6 +369,7 @@ function loaderMTLTexture(path, fileName, threeObject, callback, pivot)
     {
       material.preload();
       loadObjModel( path, fileName + '.obj', material, threeObject, callback, pivot );
+      resolve(2)
     }
   );
 }
