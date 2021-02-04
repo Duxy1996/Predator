@@ -96,14 +96,35 @@ var helperPivotGearRRef = [helperPivotGearR];
 var helperPivotGearL = pivotFactory(0.01, -0.002, 0.020);
 var helperPivotGearLRef = [helperPivotGearL];
 
-
-setTimeout(function(){ loaderMTLTexture( path, fileName, bodyAircraft, loadAircraft ); }, 500);
-setTimeout(function(){ loaderMTLTexture( path, weaponR, threeObject, loadWithPivot, helperPivoteGBURRef ); }, 1500);
-setTimeout(function(){ loaderMTLTexture( path, weaponL, threeObject, loadWithPivot, helperPivoteGBULRef ); }, 2000);
-setTimeout(function(){ loaderMTLTexture( path, propT, threeObject, loadPropeller ); }, 2500);
-setTimeout(function(){ loaderMTLTexture( path, gearF, gearObject, loadWithPivot, helperPivotGearFRef ); }, 3000);
-setTimeout(function(){ loaderMTLTexture( path, gearL, gearObjectR, loadWithPivot, helperPivotGearRRef ); }, 3500);
-setTimeout(function(){ loaderMTLTexture( path, gearR, gearObjectL, loadWithPivot, helperPivotGearLRef); }, 4000);
+new Promise(function(resolve) {
+  loaderMTLTexture(resolve ,path, fileName, bodyAircraft, loadAircraft );
+}).then(function(result) {
+  new Promise(function(resolve) {
+    loaderMTLTexture(resolve ,path, weaponR, threeObject, loadWithPivot, helperPivoteGBURRef );
+  }).then(function(result) {
+    new Promise(function(resolve) {
+      loaderMTLTexture(resolve ,path, weaponL, threeObject, loadWithPivot, helperPivoteGBULRef );
+    }).then(function(result) {
+      new Promise(function(resolve) {
+        loaderMTLTexture(resolve ,path, propT, threeObject, loadPropeller );
+      }).then(function(result) {
+        new Promise(function(resolve) {
+          loaderMTLTexture(resolve ,path, gearF, gearObject, loadWithPivot, helperPivotGearFRef );
+        }).then(function(result) {
+          new Promise(function(resolve) {
+            loaderMTLTexture(resolve ,path, gearL, gearObjectR, loadWithPivot, helperPivotGearRRef );
+          }).then(function(result) {
+            new Promise(function(resolve) {
+              loaderMTLTexture(resolve ,path, gearR, gearObjectL, loadWithPivot, helperPivotGearLRef);
+            }).then(function(result) {
+              console.log("Loaded");
+            });
+          });
+        });
+      });
+    });
+  });
+});
 
 var sound     = new THREE.PositionalAudio( listener );
 var gearsound = new THREE.PositionalAudio( listener );
