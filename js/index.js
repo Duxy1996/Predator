@@ -131,14 +131,8 @@ audioLoader.load( gearpath, function( buffer )
   gearsound.setVolume( 0.7 );
 });
 
-//scene.add( sphere );
-
 sound.setRefDistance( 1 );
 sound.setDirectionalCone( 180, 250, 0.1 );
-
-var helper = new THREE.PositionalAudioHelper( sound, 0.1 );
-helper.rotation.y = 2 * Math.PI;
-helper.scale.set(10,10,10);
 
 function onLoad()
 {
@@ -253,7 +247,6 @@ var render = function () {
 };
 
 window.addEventListener( 'resize', onWindowResize, false );
-window.addEventListener( 'mousemove', onMouseMove, false );
 window.addEventListener('keypress', logKey, false);
 
 function logKey(e)
@@ -285,12 +278,6 @@ function onWindowResize()
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize( window.innerWidth, window.innerHeight );
-}
-
-function onMouseMove( event )
-{
-  mouse.x = + ( event.clientX / window.innerWidth ) * 2 - 1;
-  mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
 
 window.requestAnimationFrame(render);
