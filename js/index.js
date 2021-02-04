@@ -42,7 +42,7 @@ var material = new THREE.MeshBasicMaterial( {color: 0xffff00,
 
 function pivotFactory(x = 0, y = 0, z = 0)
 {
-  var tmpMesh = new THREE.Mesh( geometry, material )
+  let tmpMesh = new THREE.Mesh( geometry, material )
   tmpMesh.position.z = z;
   tmpMesh.position.y = y;
   tmpMesh.position.x = x;
@@ -55,8 +55,8 @@ var body = [];
 var propeller;
 var isPropeller;
 
-var realPitch =  0;
-var realRoll  =  0;
+var realPitch    = 0;
+var realRoll     = 0;
 
 var path      = './objects/MQ-9-Predator/';
 var audiopath = './objects/MQ-9-Predator-Audio/Prop.mp3';
@@ -150,7 +150,7 @@ var render = function () {
 
   if (body.position != undefined)
   {
-    var direction = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( body.quaternion );
+    let direction = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( body.quaternion );
 
     body.position.x += direction.x * 0.01;
     body.position.y += direction.y * 0.01;
