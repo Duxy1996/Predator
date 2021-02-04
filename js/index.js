@@ -1,7 +1,4 @@
 
-let speedY = 0;
-let speedZ = 0;
-
 var loader       = new THREE.OBJLoader();
 var mtlLoader    = new THREE.MTLLoader();
 var listener     = new THREE.AudioListener();
@@ -11,15 +8,12 @@ var ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
 let plane = initTerrain()
 
 let camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
-
 let cameraDrone = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
 
 cameraDrone.position.z = -1;
-
 camera.position.z = 4;
 
 camera.add( listener );
-
 scene.add( plane );
 scene.add( ambientLight );
 
@@ -55,19 +49,6 @@ function pivotFactory(x = 0, y = 0, z = 0)
   return tmpMesh;
 }
 
-function getAxisBetweenTwoPoints(pointA,pointB)
-{
-  var posX = pointA.x - pointB.x;
-  var posY = pointA.y - pointB.y;
-  var posZ = pointA.z - pointB.z;
-
-  var norm  = Math.sqrt(posX*posX+posY*posY+posZ*posZ);
-
-  var axis  = new THREE.Vector3(posX/norm,posY/norm,posZ/norm);
-
-  return axis;
-}
-
 var aircarftList = []
 
 var body = [];
@@ -93,7 +74,6 @@ var bodyAircraft = []
 var gearObject   = [];
 var gearObjectR  = [];
 var gearObjectL  = [];
-
 
 var gearUP       = true;
 var maxFrontGear = 360;
@@ -242,12 +222,11 @@ var render = function () {
 
   if(bodyAircraft[0] != undefined)
   {
-    //console.log(bodyAircraft[0].rotation);
     if (holdHeading)
     {
       if ( locX < 0 )
       {
-        var tmpPitch = -locX * 0.01;
+        let tmpPitch = -locX * 0.01;
         if (tmpPitch > 0.002)
         {
           tmpPitch = 0.002;
@@ -354,7 +333,7 @@ function loadAircraft(object, threeObject)
   body.position.y = 0;
   body.scale.set(10,10,10);
   body.add(cameraDrone);
-  threeObject.push(body)
+  threeObject.push(body);
   scene.add( body );
 }
 
@@ -373,21 +352,19 @@ function loadWithPivot(object, threeObject, pivot)
 {
   isFrontGear = true;
 
-  var helperPivot = pivot[0];
-  object.position.z      = - helperPivot.position.z;
-  object.position.x      = - helperPivot.position.x;
-  object.position.y      = - helperPivot.position.y;
+  object.position.z      = - pivot[0].position.z;
+  object.position.x      = - pivot[0].position.x;
+  object.position.y      = - pivot[0].position.y;
 
-  threeObject.push(helperPivot);
+  threeObject.push(pivot[0]);
 
-  helperPivot.add(object);
+  pivot[0].add(object);
 }
 
 function gearChange()
 {
   gearUP = !gearUP;
   gearsound.play();
-
 }
 
 function cameraPosition()
