@@ -73,6 +73,12 @@
   bottom: 32;
   }
 
+.thrust {
+    left: 90%;
+    bottom: 32;
+    height: 200px;
+  }
+
 .landing-gear {
   height: 100%;
   width: 100%;
@@ -105,6 +111,39 @@
   bottom: 40%;
 }
 
+.showSpeed {
+  left: 90%;
+  bottom: 35%;
+  width: 45px;
+}
+
+.slider {
+  -webkit-appearance: none;
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+.slider:hover {
+  opacity: 1;
+}
+
+.slider::-moz-range-thumb {
+  height: 10px;
+  width: 50px;
+
+  border-radius: 2px;
+  border-style: solid;
+  border-color: #000000;
+  border-width: 5px;
+
+  position: fixed;
+  background:  #cccccc;
+  cursor: pointer;
+}
+
 @media (max-aspect-ratio: 12/8) {
     .float-button {
       height: 60px;
@@ -113,6 +152,7 @@
       position: absolute;
       background: white;
     }
+
     .pitch-up {
       right: 5;
       bottom: 80;
@@ -126,6 +166,10 @@
       bottom: 42;
     }
     .roll-right {
+      left: 5;
+      bottom: 42;
+    }
+    .thrust {
       left: 5;
       bottom: 42;
     }
