@@ -5,6 +5,9 @@ let ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
 
 let plane = initTerrain()
 
+let releasedGBULCheck = false;
+let releasedGBUL;
+
 let camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
 let cameraDrone = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
 
@@ -58,6 +61,7 @@ var bodyAircraft = []
 var gearObject   = [];
 var gearObjectR  = [];
 var gearObjectL  = [];
+let GBUObjectL   = [];
 
 var gearUP       = true;
 var maxFrontGear = 360;
@@ -87,7 +91,7 @@ new Promise(function(resolve) {
     loaderMTLTexture(resolve ,path, weaponR, threeObject, loadWithPivot, helperPivoteGBURRef );
   }).then(function(result) {
     new Promise(function(resolve) {
-      loaderMTLTexture(resolve ,path, weaponL, threeObject, loadWithPivot, helperPivoteGBULRef );
+      loaderMTLTexture(resolve ,path, weaponL, GBUObjectL, loadWithPivot, helperPivoteGBULRef );
     }).then(function(result) {
       new Promise(function(resolve) {
         loaderMTLTexture(resolve ,path, propT, threeObject, loadPropeller );
@@ -138,6 +142,23 @@ audioLoader.load( gearpath, function( buffer )
 
 sound.setRefDistance( 1 );
 sound.setDirectionalCone( 180, 250, 0.1 );
+
+function launchGBU() {
+  if (!releasedGBUL) {
+    releasedGBULCheck = true;
+    releasedGBUL = helperPivoteGBULRef[0].children[0];
+    let position = new THREE.Vector3();
+    releasedGBUL.getWorldPosition(position);
+    helperPivoteGBULRef[0].remove(releasedGBUL);
+    releasedGBUL.position.x = position.x;
+    releasedGBUL.position.y = position.y;
+    releasedGBUL.position.z = position.z;
+    releasedGBUL.scale.x = 10;
+    releasedGBUL.scale.y = 10;
+    releasedGBUL.scale.z = 10;
+    scene.add(releasedGBUL);
+  }
+}
 
 function onLoad()
 {
