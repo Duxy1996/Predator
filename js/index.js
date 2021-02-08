@@ -24,8 +24,9 @@ var controls  = new THREE.OrbitControls( camera, renderer.domElement );
 
 var holdHeading = false;
 var locX = 0;
-var locY = 0;
+let pauseSimulation = true;
 
+setTimeout(function(){pauseSimulation = false;}, 4000);
 
 renderer.setClearColor("#5566FF");
 
