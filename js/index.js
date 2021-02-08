@@ -21,13 +21,11 @@ var currentThrust   = 50;
 
 var renderer  = new THREE.WebGLRenderer({antialias:true});
 var controls  = new THREE.OrbitControls( camera, renderer.domElement );
-var raycaster = new THREE.Raycaster();
 
 var holdHeading = false;
 var locX = 0;
 var locY = 0;
 
-var mouse = new THREE.Vector2();
 
 renderer.setClearColor("#5566FF");
 
