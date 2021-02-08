@@ -1,7 +1,7 @@
 
-var listener     = new THREE.AudioListener();
-var scene        = new THREE.Scene();
-var ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
+let listener     = new THREE.AudioListener();
+let scene        = new THREE.Scene();
+let ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
 
 let plane = initTerrain()
 
