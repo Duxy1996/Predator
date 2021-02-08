@@ -341,6 +341,18 @@ function onWindowResize()
   renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
+function loadWithPivot(object, threeObject, pivot)
+{
+  isFrontGear = true;
+
+  object.position.z = -pivot[0].position.z;
+  object.position.x = -pivot[0].position.x;
+  object.position.y = -pivot[0].position.y;
+
+  threeObject.push(pivot[0]);
+
+  pivot[0].add(object);
+}
 window.requestAnimationFrame(render);
 
 function loadObjModel(path, url, material, threeObject, callback, pivot)
@@ -395,19 +407,6 @@ function loadPropeller(object, threeObject)
   sphereHelper[0].position.x = 0.004
   sphereHelper[0].add(object)
   scene.add(sphereHelper[0])
-}
-
-function loadWithPivot(object, threeObject, pivot)
-{
-  isFrontGear = true;
-
-  object.position.z      = - pivot[0].position.z;
-  object.position.x      = - pivot[0].position.x;
-  object.position.y      = - pivot[0].position.y;
-
-  threeObject.push(pivot[0]);
-
-  pivot[0].add(object);
 }
 
 function gearChange()
