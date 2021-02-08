@@ -378,7 +378,7 @@ function loaderMTLTexture(resolve, path, fileName, threeObject, callback, pivot)
     {
       material.preload();
       loadObjModel( path, fileName + '.obj', material, threeObject, callback, pivot );
-      resolve(2)
+      resolve(2);
     }
   );
 }
