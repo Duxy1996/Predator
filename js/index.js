@@ -302,8 +302,9 @@ var render = function () {
   renderer.render(scene, camera);
 };
 
-window.addEventListener( 'resize', onWindowResize, false );
+window.addEventListener('resize', onWindowResize, false );
 window.addEventListener('keypress', logKey, false);
+window.requestAnimationFrame(render);
 
 function logKey(e)
 {
@@ -348,7 +349,6 @@ function loadWithPivot(object, threeObject, pivot)
 
   pivot[0].add(object);
 }
-window.requestAnimationFrame(render);
 
 function loadObjModel(path, url, material, threeObject, callback, pivot)
 {
