@@ -1,6 +1,4 @@
 
-var loader       = new THREE.OBJLoader();
-var mtlLoader    = new THREE.MTLLoader();
 var listener     = new THREE.AudioListener();
 var scene        = new THREE.Scene();
 var ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
@@ -357,6 +355,7 @@ window.requestAnimationFrame(render);
 
 function loadObjModel(path, url, material, threeObject, callback, pivot)
 {
+  let loader       = new THREE.OBJLoader();
   loader
   .setMaterials( material )
   .setPath( path )
@@ -373,6 +372,7 @@ function loadObjModel(path, url, material, threeObject, callback, pivot)
 
 function loaderMTLTexture(resolve, path, fileName, threeObject, callback, pivot)
 {
+  let mtlLoader    = new THREE.MTLLoader();
   mtlLoader
   .setPath( path )
   .load(
