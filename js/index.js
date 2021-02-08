@@ -164,83 +164,11 @@ function pivotFactory(x = 0, y = 0, z = 0)
   tmpMesh.position.x = x;
   return tmpMesh;
 }
-var render = function () {
 
-  requestAnimationFrame( render );
-
-  if (body.position != undefined)
-  {
-    let direction = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( body.quaternion );
-
-    commandedThrust = document.getElementById("throttle").value;
-
-    if (commandedThrust > currentThrust)
-    {
-      currentThrust = currentThrust + 0.05;
-    }
-
-    if (commandedThrust < currentThrust)
-    {
-      currentThrust = currentThrust - 0.05;
-    }
-
-    generalThrust = 0.0005 * currentThrust;
-
-    currentSpeed = Math.round(generalThrust * 43400) / 10;
-
-    document.getElementById("speedMeter").innerHTML = currentSpeed + "\n Km/h";
-
-    let stallDelta  = 1;
-    let stallDeltaM = 0;
-
-    if (currentSpeed < 70)
-    {
-      stallDelta = -1.2;
-      stallDeltaM = 0.005;
-    }
-    else if (currentSpeed < 80)
-    {
-      stallDelta = -1.0;
-      stallDeltaM = 0.001;
-    }
-    else if (currentSpeed < 90)
-    {
-      //console.log("Caution STALL");
-    }
-
-    body.position.x += direction.x * generalThrust;
-    body.position.y += direction.y * generalThrust * stallDelta - stallDeltaM;
-    body.position.z += direction.z * generalThrust;
-
-    controls.target.z = body.position.z;
-    controls.target.x = body.position.x;
-    controls.target.y = body.position.y;
-  }
-
-  controls.update();
-
-  if(isPropeller)
-  {
-    sphereHelper[0].rotation.z -= 0.42;
-  }
-
-  if (bodyAircraft.length > 0)
-  {
-    bodyAircraft[0].rotateX( realPitch );
-    bodyAircraft[0].rotateZ( realRoll );
-    bodyAircraft[0].add(helperPivoteGBULRef[0]);
-    bodyAircraft[0].add(helperPivotGearFRef[0]);
-    bodyAircraft[0].add(helperPivotGearLRef[0]);
-    bodyAircraft[0].add(helperPivotGearRRef[0]);
-    bodyAircraft[0].add(helperPivoteGBURRef[0]);
-    bodyAircraft[0].add(sphereHelper[0]);
-    bodyAircraft[0].add(sphere)
-    locX += realPitch;
-    locY += realRoll;
-  }
-
+function landingGearUpdate() {
   if (isFrontGear)
   {
+
     if(gearUP)
     {
       if(gearObject[0] != undefined)
@@ -269,34 +197,141 @@ var render = function () {
       }
     }
   }
+}
 
+function apUpdate() {
   if(bodyAircraft[0] != undefined)
   {
     if (holdHeading)
     {
       if ( locX < 0 )
       {
-        let tmpPitch = -locX * 0.01;
-        if (tmpPitch > 0.002)
-        {
-          tmpPitch = 0.002;
-        }
-        realPitch = tmpPitch;
+        realPitch += 0.001;
       }
       if ( locX > 0 )
       {
-        realPitch = -0.001;
+        realPitch -= 0.001;
       }
-
       if ( locY < 0 )
       {
-        realRoll = +0.001;
+        realRoll += 0.001;
       }
       if ( locY > 0 )
       {
-        realRoll = -0.001;
+        realRoll -= 0.001;
       }
     }
+  }
+}
+
+function stallValue(currentSpeed) {
+  let siSpeed       = currentSpeed * 10 / 36;
+  let wingSpan      = 16.8;
+  let clCoefficient = 0.1;
+  let airDensity    = 75.6;
+
+  let liftCoeficient = (siSpeed * siSpeed * wingSpan * clCoefficient * airDensity) / 2;
+  let gravityEffort  = 3200 * 9.8;
+
+  let stallState = 0;
+  if (liftCoeficient < gravityEffort) {
+    stallState = (liftCoeficient - gravityEffort) * 0.000001;
+    stallState = Math.max(stallState, -0.04);
+  }
+  return stallState;
+}
+
+function updateThrust() {
+  commandedThrust = document.getElementById("throttle").value;
+
+  if (commandedThrust > currentThrust)
+  {
+    currentThrust = currentThrust + 0.01;
+  }
+
+  if (commandedThrust < currentThrust)
+  {
+    currentThrust = currentThrust - 0.01;
+  }
+
+  generalThrust = 0.0005 * currentThrust;
+
+  return generalThrust;
+}
+
+function updateBody() {
+
+  if (body.position != undefined)
+  {
+    let direction = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( body.quaternion );
+
+    let generalThrust = updateThrust();
+
+    currentSpeed = Math.round(generalThrust * 43400) / 10;
+
+    document.getElementById("speedMeter").innerHTML = currentSpeed + "\n Km/h";
+
+    let stallState = stallValue(currentSpeed);
+
+    body.position.x += direction.x * generalThrust;
+    body.position.y += direction.y * generalThrust + stallState;
+    body.position.z += direction.z * generalThrust;
+
+    controls.target.z = body.position.z;
+    controls.target.x = body.position.x;
+    controls.target.y = body.position.y;
+  }
+
+  if(isPropeller)
+  {
+    sphereHelper[0].rotation.z -= 0.42;
+  }
+
+  if (bodyAircraft.length > 0)
+  {
+    bodyAircraft[0].rotateX( realPitch );
+    bodyAircraft[0].rotateZ( realRoll );
+    bodyAircraft[0].add(helperPivoteGBULRef[0]);
+    bodyAircraft[0].add(helperPivotGearFRef[0]);
+    bodyAircraft[0].add(helperPivotGearLRef[0]);
+    bodyAircraft[0].add(helperPivotGearRRef[0]);
+    bodyAircraft[0].add(helperPivoteGBURRef[0]);
+    bodyAircraft[0].add(sphereHelper[0]);
+    bodyAircraft[0].add(sphere)
+    locX += realPitch;
+    locY += realRoll;
+  }
+}
+
+var render = function () {
+
+  if (releasedGBULCheck) {
+    if (releasedGBUL != undefined) {
+      releasedGBUL.position.z -= 0.07;
+    }
+  }
+
+  if (realPitch < 0)
+  {
+    realPitch = realPitch + 0.000001;
+  }
+
+  if (realPitch > 0)
+  {
+    realPitch = realPitch - 0.000001;
+  }
+
+  requestAnimationFrame( render );
+
+  if (!pauseSimulation)
+  {
+    updateBody();
+
+    controls.update();
+
+    landingGearUpdate();
+
+    apUpdate();
   }
 
   renderer.render(scene, camera);
