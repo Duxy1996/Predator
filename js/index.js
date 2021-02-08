@@ -425,22 +425,26 @@ function cameraPosition()
 
 function pitchUp()
 {
-  realPitch -= 0.0005
+  realPitch -= 0.0005;
+  realPitch = Math.max(realPitch, -0.005);
 }
 
 function pitchDown()
 {
-  realPitch += 0.0005
+  realPitch += 0.0005;
+  realPitch = Math.min(realPitch, 0.005);
 }
 
 function rollRight()
 {
   realRoll -= 0.0005
+  realRoll = Math.max(realRoll, -0.01);
 }
 
 function rollLeft()
 {
   realRoll += 0.0005
+  realRoll = Math.min(realRoll, 0.01);
 }
 
 function heading()
