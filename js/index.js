@@ -22,11 +22,13 @@ var currentThrust   = 50;
 var renderer  = new THREE.WebGLRenderer({antialias:true});
 var controls  = new THREE.OrbitControls( camera, renderer.domElement );
 
-var holdHeading = false;
-var locX = 0;
 let pauseSimulation = true;
 
 setTimeout(function(){pauseSimulation = false;}, 4000);
+
+var holdHeading = false;
+var locX        = 0;
+var locY        = 0;
 
 renderer.setClearColor("#5566FF");
 
@@ -34,9 +36,6 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 
 document.body.appendChild( renderer.domElement );
 
-
-var aircarftList = []
-var propeller;
 var isPropeller;
 
 var realPitch    = 0;
