@@ -101,7 +101,7 @@ new Promise(function(resolve) {
             new Promise(function(resolve) {
               loaderMTLTexture(resolve ,path, gearR, gearObjectL, loadWithPivot, helperPivotGearLRef);
             }).then(function(result) {
-              console.log("Loaded");
+              scene.add( body );
             });
           });
         });
@@ -392,7 +392,6 @@ function loadAircraft(object, threeObject)
   body.scale.set(10,10,10);
   body.add(cameraDrone);
   threeObject.push(body);
-  scene.add( body );
 }
 
 function loadPropeller(object, threeObject)
