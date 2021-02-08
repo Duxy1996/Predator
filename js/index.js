@@ -35,8 +35,6 @@ document.body.appendChild( renderer.domElement );
 
 
 var aircarftList = []
-
-var body = [];
 var propeller;
 var isPropeller;
 
@@ -54,6 +52,7 @@ var gearF     = 'Front-wheel';
 var gearL     = 'Left-wheel';
 var gearR     = 'Right-wheel';
 
+var body         = [];
 var threeObject  = [];
 var bodyAircraft = []
 var gearObject   = [];
