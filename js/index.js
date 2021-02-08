@@ -33,21 +33,6 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 
 document.body.appendChild( renderer.domElement );
 
-var geometry = new THREE.SphereGeometry( 0.005, 10, 10 );
-var material = new THREE.MeshBasicMaterial( {color: 0xffff00,
-                                             side: THREE.DoubleSide,
-                                             opacity: 0.0,
-                                             transparent: true,
-                                             depthWrite: false} );
-
-function pivotFactory(x = 0, y = 0, z = 0)
-{
-  let tmpMesh = new THREE.Mesh( geometry, material )
-  tmpMesh.position.z = z;
-  tmpMesh.position.y = y;
-  tmpMesh.position.x = x;
-  return tmpMesh;
-}
 
 var aircarftList = []
 
@@ -165,6 +150,21 @@ function onError()
   //console.log("Error");
 }
 
+function pivotFactory(x = 0, y = 0, z = 0)
+{
+  let geometry = new THREE.SphereGeometry( 0.005, 10, 10 );
+  let material = new THREE.MeshBasicMaterial( {color: 0xffff00,
+                                             side: THREE.DoubleSide,
+                                             opacity: 0.0,
+                                             transparent: true,
+                                             depthWrite: false} );
+
+  let tmpMesh = new THREE.Mesh( geometry, material )
+  tmpMesh.position.z = z;
+  tmpMesh.position.y = y;
+  tmpMesh.position.x = x;
+  return tmpMesh;
+}
 var render = function () {
 
   requestAnimationFrame( render );
