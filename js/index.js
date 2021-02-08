@@ -424,7 +424,7 @@ function loadAircraft(object, threeObject)
   body.position.z = 0;
   body.position.x = 0;
   body.position.y = 0;
-  body.scale.set(10,10,10);
+  body.scale.set(10, 10, 10);
   body.add(cameraDrone);
   threeObject.push(body);
 }
