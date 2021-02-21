@@ -1,5 +1,3 @@
-
-let listener     = new THREE.AudioListener();
 let scene        = new THREE.Scene();
 let ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
 
@@ -45,8 +43,6 @@ var realPitch    = 0;
 var realRoll     = 0;
 
 var path      = './objects/MQ-9-Predator/';
-var audiopath = './objects/MQ-9-Predator-Audio/Prop.mp3';
-var gearpath  = './objects/MQ-9-Predator-Audio/gear.mp3';
 var fileName  = 'Vehicle';
 var weaponR   = 'Right-GBU';
 var weaponL   = 'Left-GBU';
@@ -114,34 +110,9 @@ new Promise(function(resolve) {
   });
 });
 
-var sound     = new THREE.PositionalAudio( listener );
-var gearsound = new THREE.PositionalAudio( listener );
 
-var sphere       = pivotFactory();
 var sphereHelper = [pivotFactory()];
 
-sphere.rotation.y = 2 * Math.PI;
-
-var audioLoader = new THREE.AudioLoader();
-
-audioLoader.load( audiopath, function( buffer )
-{
-  sound.setBuffer( buffer );
-  sound.setLoop( true );
-  sound.setVolume( 0.7 );
-  sphere.add( sound );
-  sound.play();
-});
-
-audioLoader.load( gearpath, function( buffer )
-{
-  gearsound.setBuffer( buffer );
-  gearsound.setLoop( false );
-  gearsound.setVolume( 0.7 );
-});
-
-sound.setRefDistance( 1 );
-sound.setDirectionalCone( 180, 250, 0.1 );
 
 function launchGBU() {
   if (!releasedGBUL) {
@@ -170,21 +141,6 @@ function onError()
   //console.log("Error");
 }
 
-function pivotFactory(x = 0, y = 0, z = 0)
-{
-  let geometry = new THREE.SphereGeometry( 0.005, 10, 10 );
-  let material = new THREE.MeshBasicMaterial( {color: 0xffff00,
-                                             side: THREE.DoubleSide,
-                                             opacity: 0.0,
-                                             transparent: true,
-                                             depthWrite: false} );
-
-  let tmpMesh = new THREE.Mesh( geometry, material )
-  tmpMesh.position.z = z;
-  tmpMesh.position.y = y;
-  tmpMesh.position.x = x;
-  return tmpMesh;
-}
 
 function landingGearUpdate() {
   if (isFrontGear)
