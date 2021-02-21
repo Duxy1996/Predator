@@ -67,6 +67,7 @@ let GBUObjectL   = [];
 
 var gearUP       = true;
 
+var timesAp = 1;
 
 var helperPivoteGBUL = pivotFactory(0, 0, 0);
 var helperPivoteGBULRef = [helperPivoteGBUL];
@@ -145,32 +146,80 @@ function onError()
 function apUpdate() {
   if(bodyAircraft[0] != undefined)
   {
-    if (holdHeading)
-    {
-      if ( locX < 0 )
+    if (holdHeading) {
+      if ( bodyAircraft[0].rotation.x < 0 )
       {
-        realPitch += 0.001;
+        let rotationScale = 0.00001;
+        if (Math.abs(bodyAircraft[0].rotation.x) < 0.1 ) {rotationScale = 0;}
+        if (realPitch > 0) {rotationScale = rotationScale / (timesAp * 10);}
+        realPitch += rotationScale;
       }
-      if ( locX > 0 )
+      if ( bodyAircraft[0].rotation.x > 0 )
       {
-        realPitch -= 0.001;
+        let rotationScale = 0.00001;
+        if (Math.abs(bodyAircraft[0].rotation.x) < 0.1 ) {rotationScale = 0;}
+        if (realPitch < 0) {rotationScale = rotationScale / (timesAp * 10);}
+        realPitch -= rotationScale;
       }
-      if ( locY < 0 )
+      if ( bodyAircraft[0].rotation.z < 0 )
       {
-        realRoll += 0.001;
+        let rotationScale = 0.00001;
+        if (Math.abs(bodyAircraft[0].rotation.z) < 0.1 ) {rotationScale = 0;}
+        if (realRoll > 0) {rotationScale = rotationScale / (timesAp * 10);}
+        realRoll += rotationScale;
       }
-      if ( locY > 0 )
+      if ( bodyAircraft[0].rotation.z > 0 )
       {
-        realRoll -= 0.001;
+        let rotationScale = 0.00001;
+        if (Math.abs(bodyAircraft[0].rotation.z) < 0.1 ) {rotationScale = 0;}
+        if (realRoll < 0) {rotationScale = rotationScale / (timesAp * 10);}
+        realRoll -= rotationScale;
       }
+      timesAp += 1;
     }
+    timesAp = 1;
+  }
+
+  if (realPitch < 0)
+  {
+    realPitch = realPitch + 0.000001;
+  }
+
+  if (realPitch > 0)
+  {
+    realPitch = realPitch - 0.000001;
   }
 }
 
-function stallValue(currentSpeed) {
+function mapValues(value, in_min, in_max, out_min, out_max) {
+  return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+function getClCoefficient(angleOfAttak) {
+  angleOfAttak = angleOfAttak * 90;
+  if (angleOfAttak > 80) {
+    return -0.01;
+  }
+  if (angleOfAttak > 45) {
+    return 0.01;
+  }
+  if (angleOfAttak > 35) {
+    return mapValues(angleOfAttak, 36, 45, 0.05, 0.01);
+  }
+  if (angleOfAttak > 10) {
+    return mapValues(angleOfAttak, 11, 35, 0.2, 0.05);
+  }
+  if (angleOfAttak > 5) {
+    return 0.15;
+  }
+  return 0.1;
+}
+
+function stallValue(currentSpeed, angleOfAttak) {
+
   let siSpeed       = currentSpeed * 10 / 36;
   let wingSpan      = 16.8;
-  let clCoefficient = 0.1;
+  let clCoefficient = getClCoefficient(angleOfAttak);
   let airDensity    = 75.6;
 
   let liftCoeficient = (siSpeed * siSpeed * wingSpan * clCoefficient * airDensity) / 2;
@@ -178,7 +227,7 @@ function stallValue(currentSpeed) {
 
   let stallState = 0;
   if (liftCoeficient < gravityEffort) {
-    stallState = (liftCoeficient - gravityEffort) * 0.000001;
+    stallState = (liftCoeficient - gravityEffort) * 0.0000007;
     stallState = Math.max(stallState, -0.04);
   }
   return stallState;
@@ -214,7 +263,11 @@ function updateBody() {
 
     document.getElementById("speedMeter").innerHTML = currentSpeed + "\n Km/h";
 
-    let stallState = stallValue(currentSpeed);
+    let stallState = stallValue(currentSpeed, direction.y);
+
+    if (stallState < 0 ) {
+      currentThrust += stallState;
+    }
 
     body.position.x += direction.x * generalThrust;
     body.position.y += direction.y * generalThrust + stallState;
@@ -233,8 +286,9 @@ function updateBody() {
   if (bodyAircraft.length > 0)
   {
     if (getTerrainElevation(bodyAircraft[0].position)) {
-      parts.push(new ExplodeAnimation(bodyAircraft[0].position.x, bodyAircraft[0].position.z));
+      parts.push(new ExplodeAnimation(bodyAircraft[0].position.x, bodyAircraft[0].position.y, bodyAircraft[0].position.z));
       droneCrashed = true;
+      sound.stop();
     }
 
     bodyAircraft[0].rotateX( realPitch );
@@ -265,16 +319,6 @@ var render = function () {
     }
   }
 
-  if (realPitch < 0)
-  {
-    realPitch = realPitch + 0.000001;
-  }
-
-  if (realPitch > 0)
-  {
-    realPitch = realPitch - 0.000001;
-  }
-
   requestAnimationFrame( render );
 
   if (!pauseSimulation)
@@ -300,12 +344,11 @@ window.requestAnimationFrame(render);
 
 function logKey(e)
 {
-  console.log(e.keyCode);
+  let G_KEYBOARD = 103;
   switch (e.keyCode)
   {
-    case 103:
-      gearUP = !gearUP;
-      gearsound.play();
+    case G_KEYBOARD:
+      gearChange();
       break;
     case 56:
       realPitch -=0.0001
@@ -331,8 +374,6 @@ function onWindowResize()
 
 function loadWithPivot(object, threeObject, pivot)
 {
-  isFrontGear = true;
-
   object.position.z = -pivot[0].position.z;
   object.position.x = -pivot[0].position.x;
   object.position.y = -pivot[0].position.y;
