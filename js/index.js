@@ -1,7 +1,7 @@
 let scene        = new THREE.Scene();
 let ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
 
-let plane = initTerrain()
+let planeTerrain = initTerrain()
 
 let releasedGBULCheck = false;
 let releasedGBUL;
@@ -12,8 +12,9 @@ let cameraDrone = new THREE.PerspectiveCamera( 45, window.innerWidth / window.in
 cameraDrone.position.z = -1;
 camera.position.z = 4;
 
+
 camera.add( listener );
-scene.add( plane );
+scene.add( planeTerrain );
 scene.add( ambientLight );
 
 document.getElementById("throttle").value = 50;
@@ -24,6 +25,7 @@ var renderer  = new THREE.WebGLRenderer({antialias:true});
 var controls  = new THREE.OrbitControls( camera, renderer.domElement );
 
 let pauseSimulation = true;
+let droneCrashed    = false;
 
 setTimeout(function(){pauseSimulation = false;}, 4000);
 
@@ -266,6 +268,11 @@ function updateBody() {
 
   if (bodyAircraft.length > 0)
   {
+    if (getTerrainElevation(bodyAircraft[0].position)) {
+      parts.push(new ExplodeAnimation(bodyAircraft[0].position.x, bodyAircraft[0].position.z));
+      droneCrashed = true;
+    }
+
     bodyAircraft[0].rotateX( realPitch );
     bodyAircraft[0].rotateZ( realRoll );
     bodyAircraft[0].add(helperPivoteGBULRef[0]);
