@@ -143,41 +143,6 @@ function onError()
   //console.log("Error");
 }
 
-
-function landingGearUpdate() {
-  if (isFrontGear)
-  {
-
-    if(gearUP)
-    {
-      if(gearObject[0] != undefined)
-      {
-        if (gearObject[0].rotation.x < 0)
-        {
-          gearObject[0].rotation.x += 0.006;
-          gearObjectR[0].rotation.x += 0.0037;
-          gearObjectR[0].rotation.z -= 0.0012;
-
-          gearObjectL[0].rotation.x += 0.0037;
-          gearObjectL[0].rotation.z += 0.0012;
-        }
-      }
-    }
-    else
-    {
-      if (gearObject[0].rotation.x > -2.5)
-      {
-        gearObject[0].rotation.x -= 0.006;
-        gearObjectR[0].rotation.x -= 0.0037;
-        gearObjectR[0].rotation.z += 0.0012;
-
-        gearObjectL[0].rotation.x -= 0.0037;
-        gearObjectL[0].rotation.z -= 0.0012;
-      }
-    }
-  }
-}
-
 function apUpdate() {
   if(bodyAircraft[0] != undefined)
   {
@@ -313,7 +278,7 @@ var render = function () {
 
     controls.update();
 
-    landingGearUpdate();
+    landingGearUpdate(gearUP, gearObject[0], gearObjectR[0], gearObjectL[0]);
 
     apUpdate();
   }
