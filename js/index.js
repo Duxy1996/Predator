@@ -39,12 +39,16 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 
 document.body.appendChild( renderer.domElement );
 
+var dirs = [];
+var parts = [];
+
 var isPropeller;
 
 var realPitch    = 0;
 var realRoll     = 0;
 
 var path      = './objects/MQ-9-Predator/';
+
 var fileName  = 'Vehicle';
 var weaponR   = 'Right-GBU';
 var weaponL   = 'Left-GBU';
@@ -55,16 +59,13 @@ var gearR     = 'Right-wheel';
 
 var body         = [];
 var threeObject  = [];
-var bodyAircraft = []
+var bodyAircraft = [];
 var gearObject   = [];
 var gearObjectR  = [];
 var gearObjectL  = [];
 let GBUObjectL   = [];
 
 var gearUP       = true;
-var maxFrontGear = 360;
-var minFrontGear = 0
-var isFrontGear  = false;
 
 
 var helperPivoteGBUL = pivotFactory(0, 0, 0);
@@ -112,9 +113,7 @@ new Promise(function(resolve) {
   });
 });
 
-
 var sphereHelper = [pivotFactory()];
-
 
 function launchGBU() {
   if (!releasedGBUL) {
@@ -254,6 +253,12 @@ function updateBody() {
 
 var render = function () {
 
+  var pCount = parts.length;
+  while(pCount--) {
+    parts[pCount].update();
+  }
+
+
   if (releasedGBULCheck) {
     if (releasedGBUL != undefined) {
       releasedGBUL.position.z -= 0.07;
@@ -274,13 +279,16 @@ var render = function () {
 
   if (!pauseSimulation)
   {
-    updateBody();
-
     controls.update();
 
-    landingGearUpdate(gearUP, gearObject[0], gearObjectR[0], gearObjectL[0]);
+    if (!droneCrashed) {
+      updateBody();
 
-    apUpdate();
+      landingGearUpdate(gearUP, gearObject[0], gearObjectR[0], gearObjectL[0]);
+
+      apUpdate();
+    }
+
   }
 
   renderer.render(scene, camera);
