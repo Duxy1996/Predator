@@ -18,6 +18,7 @@ scene.add( planeTerrain );
 scene.add( ambientLight );
 
 document.getElementById("throttle").value = 50;
+
 var commandedThrust = document.getElementById("throttle").value;
 var currentThrust   = 50;
 
