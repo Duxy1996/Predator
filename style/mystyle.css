@@ -110,22 +110,38 @@ input[type='range']::-moz-range-thumb {
 }
 
 .pitch-up {
-  left: 40%;
+  left: 20%;
   bottom: 32;
   }
 
+.pitch-number {
+  left: 25%;
+  bottom: 32;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  }
+
 .pitch-down {
-  left: 45%;
+  left: 30%;
   bottom: 32;
   }
 
 .roll-left {
-  left: 50%;
+  left: 70%;
   bottom: 32;
   }
 
+.roll-number {
+  left: 75%;
+  bottom: 32;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  }
+
 .roll-right {
-  left: 55%;
+  left: 80%;
   bottom: 32;
   }
 
@@ -153,19 +169,19 @@ input[type='range']::-moz-range-thumb {
   transform: rotate(+20deg);
 }
 
+.altitude-position {
+  left: 5;
+  bottom: 70%;
+}
+
 .heading-position {
   left: 5;
   bottom: 50%;
 }
 
-.altitude-position {
-  left: 5;
-  bottom: 60%;
-}
-
 .hold-speed {
   left: 5;
-  bottom: 40%;
+  bottom: 30%;
 }
 
 .showSpeed {
@@ -178,7 +194,7 @@ input[type='range']::-moz-range-thumb {
   opacity: 1;
 }
 
-@media (max-aspect-ratio: 12/8) {
+@media (max-aspect-ratio: 9/16) {
     .float-button {
       height: 60px;
       width: 60px;

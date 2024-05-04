@@ -1,10 +1,16 @@
 let scene        = new THREE.Scene();
 let ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
 
-let planeTerrain = initTerrain()
+heighValue = Math.random() * (30 - 2) + 2;
+
+terrainLoader = new Terrain(220.0, heighValue, 300.0, 300.0, 1000.0, 1000.0);
+
+let planeTerrain = terrainLoader.initTerrain()
 
 let releasedGBULCheck = false;
+let releasedGBURCheck = false;
 let releasedGBUL;
+let releasedGBUR;
 
 let camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
 let cameraDrone = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
@@ -12,6 +18,7 @@ let cameraDrone = new THREE.PerspectiveCamera( 45, window.innerWidth / window.in
 cameraDrone.position.z = -1;
 camera.position.z = 4;
 
+var direction;
 
 camera.add( listener );
 scene.add( planeTerrain );
@@ -24,6 +31,9 @@ var currentThrust   = 50;
 
 var renderer  = new THREE.WebGLRenderer({antialias:true});
 var controls  = new THREE.OrbitControls( camera, renderer.domElement );
+
+/// limit the user interaction to 20m. Enough to avoid to see the horizont.
+controls.maxDistance = 30;
 
 let pauseSimulation = true;
 let droneCrashed    = false;
@@ -121,17 +131,52 @@ function launchGBU() {
   if (!releasedGBUL) {
     releasedGBULCheck = true;
     releasedGBUL = helperPivoteGBULRef[0].children[0];
+
     let position = new THREE.Vector3();
     releasedGBUL.getWorldPosition(position);
+
     helperPivoteGBULRef[0].remove(releasedGBUL);
+
     releasedGBUL.position.x = position.x;
     releasedGBUL.position.y = position.y;
     releasedGBUL.position.z = position.z;
+
+    releasedGBUL.rotation.x = body.rotation.x;
+    releasedGBUL.rotation.y = body.rotation.y;
+    releasedGBUL.rotation.z = body.rotation.z;
+
     releasedGBUL.scale.x = 10;
     releasedGBUL.scale.y = 10;
     releasedGBUL.scale.z = 10;
+
     scene.add(releasedGBUL);
+    return;
   }
+  if(!releasedGBUR)
+    {
+      releasedGBURCheck = true;
+      releasedGBUR = helperPivoteGBURRef[0].children[0];
+
+      let position = new THREE.Vector3();
+      releasedGBUR.getWorldPosition(position);
+
+      helperPivoteGBURRef[0].remove(releasedGBUR);
+
+      releasedGBUR.position.x = position.x;
+      releasedGBUR.position.y = position.y;
+      releasedGBUR.position.z = position.z;
+
+      releasedGBUR.rotation.x = body.rotation.x;
+      releasedGBUR.rotation.y = body.rotation.y;
+      releasedGBUR.rotation.z = body.rotation.z;
+
+      releasedGBUR.scale.x = 10;
+      releasedGBUR.scale.y = 10;
+      releasedGBUR.scale.z = 10;
+
+      scene.add(releasedGBUR);
+      return;
+    }
 }
 
 function onLoad()
@@ -256,13 +301,15 @@ function updateBody() {
 
   if (body.position != undefined)
   {
-    let direction = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( body.quaternion );
+    direction = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( body.quaternion );
 
     let generalThrust = updateThrust();
 
     currentSpeed = Math.round(generalThrust * 43400) / 10;
 
     document.getElementById("speedMeter").innerHTML = currentSpeed + "\n Km/h";
+    document.getElementById("rollRateNumber").innerHTML = Math.round(realRoll / 0.0005 * 10) / 10;
+    document.getElementById("pitchRateNumber").innerHTML = Math.round(realPitch / 0.0005 * 10) / 10;
 
     let stallState = stallValue(currentSpeed, direction.y);
 
@@ -286,7 +333,7 @@ function updateBody() {
 
   if (bodyAircraft.length > 0)
   {
-    if (getTerrainElevation(bodyAircraft[0].position)) {
+    if (terrainLoader.getTerrainElevation(bodyAircraft[0].position)) {
       parts.push(new ExplodeAnimation(bodyAircraft[0].position.x, bodyAircraft[0].position.y, bodyAircraft[0].position.z));
       droneCrashed = true;
       sound.stop();
@@ -316,7 +363,17 @@ var render = function () {
 
   if (releasedGBULCheck) {
     if (releasedGBUL != undefined) {
-      releasedGBUL.position.z -= 0.07;
+      releasedGBUL.position.z += 0.07 * direction.z;
+      releasedGBUL.position.y += 0.07 * direction.y;
+      releasedGBUL.position.x += 0.07 * direction.x;
+    }
+  }
+
+  if (releasedGBURCheck) {
+    if (releasedGBUR != undefined) {
+      releasedGBUR.position.z += 0.07 * direction.z;
+      releasedGBUR.position.y += 0.07 * direction.y;
+      releasedGBUR.position.x += 0.07 * direction.x;
     }
   }
 

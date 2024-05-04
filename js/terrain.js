@@ -1,74 +1,96 @@
 
 noise.seed(Math.random());
 
-function getTerrainElevation(positionDrone) {
-  let resolution = 120;
-  let muntains = 22;
 
-  let posX = 251 + positionDrone.x;
-  let posZ = 251 + positionDrone.z;
-  let perlingVal = Math.abs(noise.simplex2(posZ/ resolution, posX/ resolution)) * muntains;
-
-  if (Math.random() > 0.95) {
-    return ((perlingVal-20) > positionDrone.y);
+class Terrain {
+  // Constructor function to initialize properties
+  // Adjust the perling value scale. When gigher the perling values change less.
+  // Altitude of the terrain. When the value is higher the terrain is high.
+  constructor(resolution, maxHeight, columns, rows, sizeX, sizeY) {
+      this.resolution = resolution;
+      this.maxHeight = maxHeight;
+      this.columns = columns;
+      this.rows = rows;
+      this.sizeX = sizeX;
+      this.sizeY = sizeY;
   }
-  return false;
-}
 
-function initTerrain() {
+  getTerrainElevation(positionDrone) {
 
-  let resolution = 120;
-  let muntains = 22;
+    let posX =  this.columns / 2.0 + positionDrone.x * this.columns / this.sizeX;
+    let posZ =  this.rows / 2.0 + positionDrone.z * this.rows / this.sizeY;
 
-  let columns = 500;
-  let rows    = 500;
+    let perlingVal = Math.abs(noise.simplex2(posZ / this.resolution, posX / this.resolution)) * this.maxHeight;
 
-  let sizeX = 500;
-  let sizeY = 500;
+    if (Math.random() > 0.95) {
+      return ((perlingVal-20) > positionDrone.y);
+    }
+    return false;
+  }
 
-  var geometry = new THREE.PlaneGeometry( sizeX, sizeY, rows, columns );
-  var material = new THREE.MeshBasicMaterial( { color: 0xffffff, flatShading : THREE.FlatShading, side: THREE.DoubleSide, vertexColors: THREE.FaceColors} );
-  var plane = new THREE.Mesh( geometry, material );
+  initTerrain() {
 
-  plane.rotateX(-Math.PI / 2);
-  plane.position.y = -20;
+    var geometry = new THREE.PlaneGeometry(this.sizeX, this.sizeY, this.rows, this.columns );
+    var material = new THREE.MeshBasicMaterial( { color: 0xffffff, flatShading : THREE.FlatShading, side: THREE.DoubleSide, vertexColors: THREE.FaceColors} );
+    var plane = new THREE.Mesh( geometry, material );
 
-  columns = columns + 1;
-  rows    = rows + 1;
+    plane.rotateX(-Math.PI / 2);
+    plane.position.y = -20;
 
-  for (let i = 0; i < columns; i=i+1) {
-    for (let j = 0; j < rows; j=j+1) {
-      let offset = j + i * rows;
-      let perlingVal = Math.abs(noise.simplex2(i/ resolution, j/ resolution)) * muntains;
+    this.columns = this.columns + 1;
+    this.rows    = this.rows + 1;
 
-      geometry.vertices[offset].z = perlingVal;
+    for (let i = 0; i < this.columns; i=i+1) {
+      for (let j = 0; j < this.rows; j=j+1) {
+        let offset = j + i * this.rows;
+        let perlingVal = Math.abs(noise.simplex2(i/ this.resolution, j/ this.resolution)) * this.maxHeight;
 
-      let r_v = 0;
-      let g_v = perlingVal / muntains;
-      let b_v = 0;
+        let perlingValColor       = Math.abs(noise.simplex2(i/ 160, j/ 160));
+        let perlingValGroundColor = Math.abs(noise.simplex2(i/ 160, j/ 160));
+        let perlingValSnowColor   = Math.abs(noise.simplex2(i/ 160 + 1000, j/ 160 + 1000));
 
-      if (perlingVal < 1.5) {
-        geometry.vertices[offset].z = 1 ;
-        b_v = 1;
-        g_v = 0;
-      }
+        geometry.vertices[offset].z = perlingVal;
 
-      if (perlingVal > 16) {
-        r_v = 1;
-        g_v = 1;
-        b_v = 1;
-      }
+        let r_v = 0;
+        let g_v = (perlingVal / this.maxHeight) * 0.8 + 0.2;
+        let b_v = 0;
 
-      if (offset < plane.geometry.faces.length / 2 + columns - 2) {
-        plane.geometry.faces[offset * 2 + 1 - i * 2].color.setRGB(r_v, g_v, b_v);
-        plane.geometry.faces[offset * 2 + 0 - i * 2].color.setRGB(r_v, g_v, b_v);
+        if (perlingVal < 1.5) {
+          r_v = 0;
+          geometry.vertices[offset].z = 1 ;
+          b_v = perlingValColor * 0.8 + 0.2;
+          g_v = 0;
+        }
+
+        if ((perlingVal > 8) && (perlingVal < 12)) {
+          if (perlingValGroundColor < (0.3 + 0.1 * Math.random())) {
+            r_v = 0.3 + perlingValGroundColor * 0.2;
+            g_v = 0.2 + perlingValGroundColor * 0.2 + perlingVal /this. maxHeight * 0.4;
+            b_v = 0;
+          }
+        }
+
+        if (perlingVal > (16 + Math.random() * 2)) {
+          if (perlingValSnowColor < (0.3 + 0.1 * Math.random()))
+          {
+            r_v = perlingValSnowColor * 0.29 + Math.random() * 0.01 + 0.7;
+            g_v = perlingValSnowColor * 0.29 + Math.random() * 0.01 + 0.7;
+            b_v = perlingValSnowColor * 0.29 + Math.random() * 0.01 + 0.7;
+          }
+        }
+
+        if (offset < plane.geometry.faces.length / 2 + this.columns - 2) {
+          plane.geometry.faces[offset * 2 + 1 - i * 2].color.setRGB(r_v, g_v, b_v);
+          plane.geometry.faces[offset * 2 + 0 - i * 2].color.setRGB(r_v, g_v, b_v);
+        }
       }
     }
+
+    geometry.dynamic = true;
+    geometry.__dirtyVertices = true;
+    geometry.__dirtyNormals = true;
+
+    return plane;
   }
 
-  geometry.dynamic = true;
-  geometry.__dirtyVertices = true;
-  geometry.__dirtyNormals = true;
-
-  return plane;
 }
