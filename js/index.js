@@ -378,7 +378,14 @@ var render = function () {
 
   var pCount = parts.length;
   while(pCount--) {
-    parts[pCount].update();
+    if(parts[pCount].iterations < 500)
+      {
+        parts[pCount].update();
+      }
+    if(parts[pCount].iterations == 500)
+      {
+        parts[pCount].endInteraction();
+      }
   }
 
 
