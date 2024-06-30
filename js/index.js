@@ -11,6 +11,8 @@ const wingSpan      = 16.8;
 const airDensity    = 75.6;
 const gravityEffort  = 31360; // 3200 kg x 9.8
 
+terrainLoader = new Terrain(220.0, heighValue, 600.0, 600.0, 1000.0, 1000.0);
+
 let planeTerrain = terrainLoader.initTerrain()
 
 let releasedGBULCheck = false;
