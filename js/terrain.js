@@ -51,17 +51,37 @@ class Terrain {
 
         geometry.vertices[offset].z = perlingVal;
 
-        let r_v = 0;
-        let g_v = (perlingVal / this.maxHeight) * 0.8 + 0.2;
+        let r_v = Math.random() * 0.1;
+        let g_v = (perlingVal / this.maxHeight) * 0.8;
         let b_v = 0;
 
-        if (perlingVal < 1.5) {
-          r_v = 0;
-          geometry.vertices[offset].z = 1 ;
-          b_v = perlingValColor * 0.8 + 0.2;
-          g_v = 0;
+        if(g_v < 0.15) {
+          g_v = 0.13 +  Math.random() * 0.02;
         }
 
+        if(g_v > 0.75) {
+          g_v = 0.75 * Math.random();
+        }
+
+        /// when the altitude is below 1.5 meters. shohuld me water.
+        if (perlingVal < 1.5) {
+          r_v = 0;
+          g_v = Math.random() * 0.05;
+          b_v = perlingValColor * 0.5 + 0.5;
+
+          if(perlingVal < 2){
+            b_v = perlingValColor * 0.9 + 0.1;
+          }
+
+          if (b_v < 0.3)
+          {
+            b_v = 0.3;
+          }
+
+          geometry.vertices[offset].z = 1 ;
+        }
+
+        // dirt
         if ((perlingVal > 8) && (perlingVal < 12)) {
           if (perlingValGroundColor < (0.3 + 0.1 * Math.random())) {
             r_v = 0.3 + perlingValGroundColor * 0.2;
