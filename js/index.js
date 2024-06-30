@@ -345,6 +345,7 @@ function updateBody() {
 
     if (direction.y < 0) {
       currentThrust += Math.abs(gravityEffort * Math.sin(direction.y)) / 100000;
+    }
 
     if (stallState < 0 ) {
       currentThrust += stallState;
