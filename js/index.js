@@ -330,11 +330,21 @@ function updateBody() {
 
     currentSpeed = Math.round(generalThrust * 43400) / 10;
 
+    if (currentSpeed < 0)
+    {
+      currentSpeed = Math.abs(currentSpeed);
+    }
+
+    let stallState = stallValue(currentSpeed, direction.y) / (450); // acceleration / time. stallState negative
+
     document.getElementById("speedMeter").innerHTML = currentSpeed + "\n Km/h";
     document.getElementById("rollRateNumber").innerHTML = Math.round(realRoll / 0.0005 * 10) / 10;
     document.getElementById("pitchRateNumber").innerHTML = Math.round(realPitch / 0.0005 * 10) / 10;
 
-    let stallState = stallValue(currentSpeed, direction.y);
+    let fallingForce = 0;
+
+    if (direction.y < 0) {
+      currentThrust += Math.abs(gravityEffort * Math.sin(direction.y)) / 100000;
 
     if (stallState < 0 ) {
       currentThrust += stallState;
