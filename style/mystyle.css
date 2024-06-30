@@ -95,28 +95,28 @@ input[type='range']::-moz-range-thumb {
 }
 
 .gear-position {
-  right: 10;
+  right: 10px;
   top: 5%;
   }
 
 .camera-position {
-  right: 10;
+  right: 10px;
   top: 15%;
 }
 
 .gbu-position {
-  right: 10;
+  right: 10px;
   top: 25%;
 }
 
 .pitch-up {
   left: 20%;
-  bottom: 32;
+  bottom: 32px;
   }
 
 .pitch-number {
   left: 25%;
-  bottom: 32;
+  bottom: 32px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -124,17 +124,17 @@ input[type='range']::-moz-range-thumb {
 
 .pitch-down {
   left: 30%;
-  bottom: 32;
+  bottom: 32px;
   }
 
 .roll-left {
   left: 70%;
-  bottom: 32;
+  bottom: 32px;
   }
 
 .roll-number {
   left: 75%;
-  bottom: 32;
+  bottom: 32px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -142,7 +142,7 @@ input[type='range']::-moz-range-thumb {
 
 .roll-right {
   left: 80%;
-  bottom: 32;
+  bottom: 32px;
   }
 
 .thrust {
