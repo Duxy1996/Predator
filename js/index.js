@@ -1,9 +1,15 @@
 let scene        = new THREE.Scene();
 let ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
 
-heighValue = Math.random() * (30 - 2) + 2;
+heighValue = Math.random() * 40;
 
-terrainLoader = new Terrain(220.0, heighValue, 300.0, 300.0, 1000.0, 1000.0);
+// MQ-9 Reaper de la USAF.
+
+// MAX weight 4760
+
+const wingSpan      = 16.8;
+const airDensity    = 75.6;
+const gravityEffort  = 31360; // 3200 kg x 9.8
 
 let planeTerrain = terrainLoader.initTerrain()
 
@@ -41,8 +47,6 @@ let droneCrashed    = false;
 setTimeout(function(){pauseSimulation = false;}, 4000);
 
 var holdHeading = false;
-var locX        = 0;
-var locY        = 0;
 
 renderer.setClearColor("#5566FF");
 
@@ -57,6 +61,7 @@ var isPropeller;
 
 var realPitch    = 0;
 var realRoll     = 0;
+var headingCommanded = 0;
 
 var path      = './objects/MQ-9-Predator/';
 
@@ -228,13 +233,23 @@ function apUpdate() {
 
   if (realPitch < 0)
   {
-    realPitch = realPitch + 0.000001;
+    realPitch = realPitch + 0.00001;
   }
 
   if (realPitch > 0)
   {
-    realPitch = realPitch - 0.000001;
+    realPitch = realPitch - 0.00001;
   }
+
+  if (realRoll < 0)
+    {
+      realRoll = realRoll + 0.00001;
+    }
+
+    if (realRoll > 0)
+    {
+      realRoll = realRoll - 0.00001;
+    }
 }
 
 function mapValues(value, in_min, in_max, out_min, out_max) {
@@ -263,18 +278,14 @@ function getClCoefficient(angleOfAttak) {
 
 function stallValue(currentSpeed, angleOfAttak) {
 
-  let siSpeed       = currentSpeed * 10 / 36;
-  let wingSpan      = 16.8;
-  let clCoefficient = getClCoefficient(angleOfAttak);
-  let airDensity    = 75.6;
+  let siSpeed = currentSpeed * 0.27778;
 
-  let liftCoeficient = (siSpeed * siSpeed * wingSpan * clCoefficient * airDensity) / 2;
-  let gravityEffort  = 3200 * 9.8;
+  let clCoefficient = getClCoefficient(angleOfAttak);
+  let liftCoeficient = (siSpeed * siSpeed * wingSpan * clCoefficient * airDensity) / 2; // is on newtons
 
   let stallState = 0;
   if (liftCoeficient < gravityEffort) {
-    stallState = (liftCoeficient - gravityEffort) * 0.0000007;
-    stallState = Math.max(stallState, -0.04);
+    stallState = (liftCoeficient - gravityEffort) / 3200; // Force/mass = acceleration
   }
   return stallState;
 }
@@ -284,12 +295,17 @@ function updateThrust() {
 
   if (commandedThrust > currentThrust)
   {
-    currentThrust = currentThrust + 0.01;
+    currentThrust = currentThrust + 0.015;
   }
 
   if (commandedThrust < currentThrust)
   {
-    currentThrust = currentThrust - 0.01;
+    currentThrust = currentThrust - 0.015;
+  }
+
+  if(currentThrust < 0)
+  {
+    currentThrust = 0;
   }
 
   generalThrust = 0.0005 * currentThrust;
@@ -348,8 +364,6 @@ function updateBody() {
     bodyAircraft[0].add(helperPivoteGBURRef[0]);
     bodyAircraft[0].add(sphereHelper[0]);
     bodyAircraft[0].add(sphere)
-    locX += realPitch;
-    locY += realRoll;
   }
 }
 
@@ -363,17 +377,17 @@ var render = function () {
 
   if (releasedGBULCheck) {
     if (releasedGBUL != undefined) {
-      releasedGBUL.position.z += 0.07 * direction.z;
-      releasedGBUL.position.y += 0.07 * direction.y;
-      releasedGBUL.position.x += 0.07 * direction.x;
+      releasedGBUL.position.z += 0.23 * direction.z;
+      releasedGBUL.position.y += 0.23 * direction.y;
+      releasedGBUL.position.x += 0.23 * direction.x;
     }
   }
 
   if (releasedGBURCheck) {
     if (releasedGBUR != undefined) {
-      releasedGBUR.position.z += 0.07 * direction.z;
-      releasedGBUR.position.y += 0.07 * direction.y;
-      releasedGBUR.position.x += 0.07 * direction.x;
+      releasedGBUR.position.z += 0.23 * direction.z;
+      releasedGBUR.position.y += 0.23 * direction.y;
+      releasedGBUR.position.x += 0.23 * direction.x;
     }
   }
 
@@ -408,17 +422,17 @@ function logKey(e)
     case G_KEYBOARD:
       gearChange();
       break;
-    case 56:
-      realPitch -=0.0001
+    case 119:
+      realPitch -=0.0005
       break;
-    case 50:
-      realPitch +=0.0001
+    case 115:
+      realPitch +=0.0005
       break;
-    case 52:
-      realRoll +=0.0001
+    case 97:
+      realRoll +=0.0005
       break;
-    case 54:
-      realRoll -=0.0001
+    case 100:
+      realRoll -=0.0005
       break;
   }
 }
