@@ -156,9 +156,12 @@ function launchGBU() {
     releasedGBUL.scale.y = 10;
     releasedGBUL.scale.z = 10;
 
+    parts.push(new DirectionalExplosion(position.x, position.y, position.z, direction));
+
     scene.add(releasedGBUL);
     return;
   }
+
   if(!releasedGBUR)
     {
       releasedGBURCheck = true;
@@ -180,6 +183,8 @@ function launchGBU() {
       releasedGBUR.scale.x = 10;
       releasedGBUR.scale.y = 10;
       releasedGBUR.scale.z = 10;
+
+      parts.push(new DirectionalExplosion(position.x, position.y, position.z, direction));
 
       scene.add(releasedGBUR);
       return;
