@@ -353,10 +353,21 @@ function simulateFlightStep(
   throttle,
   deltaTime
 ) {
-  const gravity = 9.81; // m/s^2
-  const liftCoefficient = 0.3; // Simplified lift coefficient
+  const gravity = 9.81;         // m/s^2
   const dragCoefficient = 0.06; // Simplified drag coefficient
-  const airDensity = 1.225; // kg/m^3 at sea level
+  const airDensity = 1.225;     // kg/m^3 at sea level
+  const maxThrust = 28553.59;   // N/m
+  const alpha_zero = 0.00;
+  const alpha_slope = 3.45; // This is bcs with 5 degrees give us 0.3 lifCoef
+  let liftCoefficient = 0.3;  // Simplified lift coefficient
+
+  let currentPitch = 0.0;
+
+  if(bodyAircraft[0] != undefined)
+  {
+    currentPitch = bodyAircraft[0].rotation.x;
+    liftCoefficient = alpha_slope * (currentPitch - alpha_zero);
+  }
 
   // Calculate total velocity magnitude
   velocityMagnitude = Math.sqrt(
@@ -373,9 +384,9 @@ function simulateFlightStep(
   }
 
   if(velocityMagnitudeXZ == 0)
-    {
-      velocityMagnitudeXZ = 0.01;
-    }
+  {
+    velocityMagnitudeXZ = 0.01;
+  }
 
   // Calculate unit vector in velocity direction
   const velocityUnit = {
@@ -395,9 +406,8 @@ function simulateFlightStep(
   const lift = liftCoefficient * dynamicPressure * wingspan;
   // Calculate drag force (opposite to velocity vector)
   const dragMagnitude = dragCoefficient * dynamicPressure * wingspan;
-
   // Computed thurst
-  const computeThurst = throttle * 28553.59;
+  const computeThurst = throttle * maxThrust;
 
   // Apply drag in all directions
   acceleration.x = -(dragMagnitude * velocityUnitXZ.x) / weight;
@@ -405,11 +415,6 @@ function simulateFlightStep(
 
   acceleration.x += (computeThurst * direction.x) / weight;
   acceleration.z += (computeThurst * direction.z) / weight;
-
-  console.log((dragMagnitude * velocityUnitXZ.x), computeThurst);
-
-
-
 
   // Update acceleration
   acceleration.y = ((lift - weight * gravity) / weight);// need to add drag which is velocity on y mult by dragmagnitude on y which is like dragmagitude but witt y speed;
@@ -421,8 +426,6 @@ function simulateFlightStep(
       acceleration.y = 0;
     }
   }
-
-  // console.log(Math.round(dynamicPressure,2), ", ", Math.round(dragMagnitude,2), ", ", Math.round(velocityMagnitudeXZ, 2));
 
   // Update velocity
   velocity.x += acceleration.x * deltaTime;
@@ -465,7 +468,7 @@ function explosionAnimation()
 var render = function() {
 
   var testSituation = simulateFlightStep(testPosition, testVelocity, testAcceleration, 16.5, 3200, {x: 1, y:0, z:0}, 1, 1/30);
-  console.log("p ",testSituation.position);
+  //console.log("p ",testSituation.position);
 
   testPosition = testSituation.position;
   testVelocity = testSituation.velocity;
