@@ -295,9 +295,9 @@ function updateBody() {
     // direction.z = direction.z * 0.1 - Math.cos(bodyAircraft[0].rotation.z*2);
     // direction.y = direction.y * 0.1;
 
-    body.position.x += direction.x * generalThrust;
-    body.position.y += direction.y * generalThrust + stallState;
-    body.position.z += direction.z * generalThrust;
+    // body.position.x += direction.x * generalThrust;
+    // body.position.y += direction.y * generalThrust + stallState;
+    // body.position.z += direction.z * generalThrust;
 
     // let heading = Math.atan2(direction.x, direction.z);
 
@@ -358,7 +358,7 @@ function simulateFlightStep(
   const airDensity = 1.225;     // kg/m^3 at sea level
   const maxThrust = 28553.59;   // N/m
   const alpha_zero = 0.00;
-  const alpha_slope = 3.45; // This is bcs with 5 degrees give us 0.3 lifCoef
+  const alpha_slope = 1.45; // This is bcs with 5 degrees give us 0.3 lifCoef
   let liftCoefficient = 0.3;  // Simplified lift coefficient
 
   let currentPitch = 0.0;
@@ -409,6 +409,9 @@ function simulateFlightStep(
   // Computed thurst
   const computeThurst = throttle * maxThrust;
 
+  const dynamicPressureYAxis = 0.5 * airDensity * velocity.y * velocity.y;
+  const dragMagnitudeYAxis = dragCoefficient * dynamicPressureYAxis * wingspan;
+
   // Apply drag in all directions
   acceleration.x = -(dragMagnitude * velocityUnitXZ.x) / weight;
   acceleration.z = -(dragMagnitude * velocityUnitXZ.z) / weight;
@@ -417,7 +420,7 @@ function simulateFlightStep(
   acceleration.z += (computeThurst * direction.z) / weight;
 
   // Update acceleration
-  acceleration.y = ((lift - weight * gravity) / weight);// need to add drag which is velocity on y mult by dragmagnitude on y which is like dragmagitude but witt y speed;
+  acceleration.y = ((lift - weight * gravity) / weight) - ((velocity.y * dragMagnitudeYAxis) / weight);// need to add drag which is velocity on y mult by dragmagnitude on y which is like dragmagitude but witt y speed;
 
   if(position.y <= 1)
   {
@@ -427,15 +430,43 @@ function simulateFlightStep(
     }
   }
 
+  let horizontalAcceleration = 0.0;
+
+  if(bodyAircraft[0] != undefined)
+  {
+    // Calculate horizontal acceleration based on roll angle
+    horizontalAcceleration = Math.sin(bodyAircraft[0].rotation.z) * 1;
+  }
+
+  // Update acceleration vector
+  let accelerationRollX = Math.sin(currentPitch) * horizontalAcceleration * 10.0;
+  let accelerationRollZ = Math.cos(currentPitch) * horizontalAcceleration * 10.0;
+
+  acceleration.x += (accelerationRollX + accelerationRollZ);
+  acceleration.z -= (accelerationRollZ + accelerationRollX);
+
   // Update velocity
   velocity.x += acceleration.x * deltaTime;
   velocity.y += acceleration.y * deltaTime;
   velocity.z += acceleration.z * deltaTime;
 
+  let theta = Math.atan2(-velocity.z, velocity.x);
+  if(bodyAircraft[0] != undefined)
+  {
+    bodyAircraft[0].rotation.y = theta;
+  }
+
   // Update position
   position.x += velocity.x * deltaTime;
   position.y += velocity.y * deltaTime;
   position.z += velocity.z * deltaTime;
+
+  if(body.position != undefined)
+  {
+    body.position.x = position.z / 100;
+    body.position.y = position.y / 100;
+    body.position.z = - position.x / 100;
+  }
 
   return { position, velocity, acceleration };
 }
@@ -468,7 +499,7 @@ function explosionAnimation()
 var render = function() {
 
   var testSituation = simulateFlightStep(testPosition, testVelocity, testAcceleration, 16.5, 3200, {x: 1, y:0, z:0}, 1, 1/30);
-  //console.log("p ",testSituation.position);
+  console.log("p : ",testSituation.velocity);
 
   testPosition = testSituation.position;
   testVelocity = testSituation.velocity;
