@@ -9,7 +9,6 @@ heighValue = Math.random() * 40;
 
 const wingSpan      = 16.8;
 const airDensity    = 75.6;
-const gravityEffort  = 31360; // 3200 kg x 9.8
 
 terrainLoader = new Terrain(220.0, heighValue, 600.0, 600.0, 1000.0, 1000.0);
 
@@ -21,7 +20,7 @@ let cameraDrone = new THREE.PerspectiveCamera( 45, window.innerWidth / window.in
 cameraDrone.position.z = -1;
 camera.position.z = 4;
 
-var direction;
+var directionGlobal = {x: 1, y:0, z:0};
 
 camera.add( listener );
 scene.add( planeTerrain );
@@ -35,7 +34,7 @@ var currentThrust   = 50;
 var renderer  = new THREE.WebGLRenderer({antialias:true});
 var controls  = new THREE.OrbitControls( camera, renderer.domElement );
 
-/// limit the user interaction to 20m. Enough to avoid to see the horizont.
+/// limit the user interaction to 30m. Enough to avoid to see the horizont.
 controls.maxDistance = 30;
 
 let pauseSimulation = true;
@@ -51,13 +50,18 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 
 document.body.appendChild( renderer.domElement );
 
+var fullAircraftLoaded = false;
+
 var dirs = [];
 var parts = [];
 
 var isPropeller;
 
+var realHeading = 0;
+var headingBackup = 0;
 var realPitch    = 0;
 var realRoll     = 0;
+var rollBackup   = 0.0;
 var headingCommanded = 0;
 
 var path      = './objects/MQ-9-Predator/';
@@ -77,6 +81,11 @@ var gearObject   = [];
 var gearObjectR  = [];
 var gearObjectL  = [];
 let GBUObjectL   = [];
+
+// These are the initial values, this like the "Santo grial" og this simulation
+var testPosition     = {x: 0, y: 10, z: 0}
+var testVelocity     = {x: 120, y: 0, z: 0}
+var testAcceleration = {x: 0, y: 0, z: 0}
 
 var gearUP       = true;
 
@@ -118,6 +127,18 @@ new Promise(function(resolve) {
             new Promise(function(resolve) {
               loaderMTLTexture(resolve ,path, gearR, gearObjectL, loadWithPivot, helperPivotGearLRef);
             }).then(function(result) {
+              if(terrainLoader.getTerrainElevation(testPosition))
+                {
+                  testPosition.y = 600.0;
+                }
+              fullAircraftLoaded = true;
+              bodyAircraft[0].add(helperPivoteGBULRef[0]);
+              bodyAircraft[0].add(helperPivotGearFRef[0]);
+              bodyAircraft[0].add(helperPivotGearLRef[0]);
+              bodyAircraft[0].add(helperPivotGearRRef[0]);
+              bodyAircraft[0].add(helperPivoteGBURRef[0]);
+              bodyAircraft[0].add(sphereHelper[0]);
+              bodyAircraft[0].add(sphere)
               scene.add( body );
             });
           });
@@ -137,103 +158,6 @@ function onLoad()
 function onError()
 {
   //console.log("Error");
-}
-
-function apUpdate() {
-  if(bodyAircraft[0] != undefined)
-  {
-    if (holdHeading) {
-      if ( bodyAircraft[0].rotation.x < 0 )
-      {
-        let rotationScale = 0.00001;
-        if (Math.abs(bodyAircraft[0].rotation.x) < 0.1 ) {rotationScale = 0;}
-        if (realPitch > 0) {rotationScale = rotationScale / (timesAp * 10);}
-        realPitch += rotationScale;
-      }
-      if ( bodyAircraft[0].rotation.x > 0 )
-      {
-        let rotationScale = 0.00001;
-        if (Math.abs(bodyAircraft[0].rotation.x) < 0.1 ) {rotationScale = 0;}
-        if (realPitch < 0) {rotationScale = rotationScale / (timesAp * 10);}
-        realPitch -= rotationScale;
-      }
-      if ( bodyAircraft[0].rotation.z < 0 )
-      {
-        let rotationScale = 0.00001;
-        if (Math.abs(bodyAircraft[0].rotation.z) < 0.1 ) {rotationScale = 0;}
-        if (realRoll > 0) {rotationScale = rotationScale / (timesAp * 10);}
-        realRoll += rotationScale;
-      }
-      if ( bodyAircraft[0].rotation.z > 0 )
-      {
-        let rotationScale = 0.00001;
-        if (Math.abs(bodyAircraft[0].rotation.z) < 0.1 ) {rotationScale = 0;}
-        if (realRoll < 0) {rotationScale = rotationScale / (timesAp * 10);}
-        realRoll -= rotationScale;
-      }
-      timesAp += 1;
-    }
-    timesAp = 1;
-  }
-
-  if (realPitch < 0)
-  {
-    realPitch = realPitch + 0.00001;
-  }
-
-  if (realPitch > 0)
-  {
-    realPitch = realPitch - 0.00001;
-  }
-
-  if (realRoll < 0)
-  {
-    realRoll = realRoll + 0.00001;
-  }
-
-  if (realRoll > 0)
-  {
-    realRoll = realRoll - 0.00001;
-  }
-}
-
-function mapValues(value, in_min, in_max, out_min, out_max) {
-  return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-
-function getClCoefficient(angleOfAttak) {
-  angleOfAttak = angleOfAttak * 90;
-  if (angleOfAttak > 80) {
-    return -0.01;
-  }
-  if (angleOfAttak > 45) {
-    return 0.01;
-  }
-  if (angleOfAttak > 35) {
-    return mapValues(angleOfAttak, 36, 45, 0.05, 0.01);
-  }
-  if (angleOfAttak > 10) {
-    return mapValues(angleOfAttak, 11, 35, 0.2, 0.05);
-  }
-  if (angleOfAttak > 5) {
-    return 0.15;
-  }
-  return 0.1;
-}
-
-function stallValue(currentSpeed, angleOfAttak) {
-
-  let siSpeed = currentSpeed * 0.27778;
-
-  let clCoefficient = getClCoefficient(angleOfAttak);
-  let liftCoeficient = (siSpeed * siSpeed * wingSpan * clCoefficient * airDensity) / 2; // is on newtons
-
-  let stallState = 0;
-  if (liftCoeficient < gravityEffort) {
-    stallState = (liftCoeficient - gravityEffort) / 3200; // Force/mass = acceleration
-  }
-
-  return stallState;
 }
 
 // Update the thurs based on the speed. MAX thurst is 217. min thurs is 0.
@@ -264,49 +188,16 @@ function updateBody() {
 
   if (body.position != undefined)
   {
-    direction = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( body.quaternion );
+    directionGlobal = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( body.quaternion );
+    directionGlobal = {x: directionGlobal.z * -1, y: directionGlobal.y, z: directionGlobal.x};
 
     let generalThrust = updateThrust();
 
     currentSpeed = Math.round(generalThrust * 43400) / 10;
 
-    if (currentSpeed < 0)
-    {
-      currentSpeed = Math.abs(currentSpeed);
-    }
-
-    let stallState = stallValue(currentSpeed, direction.y) / (450); // acceleration / time. stallState negative
-
     document.getElementById("speedMeter").innerHTML = currentSpeed + "\n Km/h";
     document.getElementById("rollRateNumber").innerHTML = Math.round(realRoll / 0.0005 * 10) / 10;
     document.getElementById("pitchRateNumber").innerHTML = Math.round(realPitch / 0.0005 * 10) / 10;
-
-    let fallingForce = 0;
-
-    if (direction.y < 0) {
-      currentThrust += Math.abs(gravityEffort * Math.sin(direction.y)) / 100000;
-    }
-
-    if (stallState < 0 ) {
-      currentThrust += stallState;
-    }
-
-    // direction.x = direction.x * 0.1 - Math.sin(bodyAircraft[0].rotation.z*2);
-    // direction.z = direction.z * 0.1 - Math.cos(bodyAircraft[0].rotation.z*2);
-    // direction.y = direction.y * 0.1;
-
-    // body.position.x += direction.x * generalThrust;
-    // body.position.y += direction.y * generalThrust + stallState;
-    // body.position.z += direction.z * generalThrust;
-
-    // let heading = Math.atan2(direction.x, direction.z);
-
-    // bodyAircraft[0].rotation.y = -heading;
-
-    // console.log(heading * 180 / 3.1415);
-
-    // body.position.x += generalThrust * Math.sin(heading + headingCommanded);
-    // body.position.z += generalThrust * Math.cos(heading + headingCommanded);
 
     controls.target.z = body.position.z;
     controls.target.x = body.position.x;
@@ -326,22 +217,11 @@ function updateBody() {
       sound.stop();
     }
 
-    bodyAircraft[0].rotateX( realPitch );
-    bodyAircraft[0].rotateZ( realRoll );
-
-    bodyAircraft[0].add(helperPivoteGBULRef[0]);
-    bodyAircraft[0].add(helperPivotGearFRef[0]);
-    bodyAircraft[0].add(helperPivotGearLRef[0]);
-    bodyAircraft[0].add(helperPivotGearRRef[0]);
-    bodyAircraft[0].add(helperPivoteGBURRef[0]);
-    bodyAircraft[0].add(sphereHelper[0]);
-    bodyAircraft[0].add(sphere)
+    body.rotateX( realPitch );
+    body.rotateZ( realRoll );
+    rollBackup += realRoll;
   }
 }
-
-var testPosition     = {x: 0, y: 0, z: 0}
-var testVelocity     = {x: 0, y: 0, z: 0}
-var testAcceleration = {x: 0, y: 0, z: 0}
 
 function simulateFlightStep(
   position,
@@ -363,9 +243,9 @@ function simulateFlightStep(
 
   let currentPitch = 0.0;
 
-  if(bodyAircraft[0] != undefined)
+  if(body != undefined)
   {
-    currentPitch = bodyAircraft[0].rotation.x;
+    currentPitch = body.rotation.x;
     liftCoefficient = alpha_slope * (currentPitch - alpha_zero);
   }
 
@@ -420,7 +300,7 @@ function simulateFlightStep(
   acceleration.z += (computeThurst * direction.z) / weight;
 
   // Update acceleration
-  acceleration.y = ((lift - weight * gravity) / weight) - ((velocity.y * dragMagnitudeYAxis) / weight);// need to add drag which is velocity on y mult by dragmagnitude on y which is like dragmagitude but witt y speed;
+  acceleration.y = ((lift - weight * gravity) / weight) - ((velocity.y * dragMagnitudeYAxis) / weight) * 0.1;// need to add drag which is velocity on y mult by dragmagnitude on y which is like dragmagitude but witt y speed;
 
   if(position.y <= 1)
   {
@@ -432,18 +312,18 @@ function simulateFlightStep(
 
   let horizontalAcceleration = 0.0;
 
-  if(bodyAircraft[0] != undefined)
+  if(body != undefined)
   {
     // Calculate horizontal acceleration based on roll angle
-    horizontalAcceleration = Math.sin(bodyAircraft[0].rotation.z) * 1;
+    horizontalAcceleration = Math.sin(rollBackup) * 1;
   }
 
   // Update acceleration vector
-  let accelerationRollX = Math.sin(currentPitch) * horizontalAcceleration * 10.0;
-  let accelerationRollZ = Math.cos(currentPitch) * horizontalAcceleration * 10.0;
+  let accelerationRollX = Math.sin(-headingBackup) * horizontalAcceleration * 10.0;
+  let accelerationRollZ = Math.cos(-headingBackup) * horizontalAcceleration * 10.0;
 
-  acceleration.x += (accelerationRollX + accelerationRollZ);
-  acceleration.z -= (accelerationRollZ + accelerationRollX);
+  acceleration.x += accelerationRollX ;
+  acceleration.z -= accelerationRollZ ;
 
   // Update velocity
   velocity.x += acceleration.x * deltaTime;
@@ -451,9 +331,40 @@ function simulateFlightStep(
   velocity.z += acceleration.z * deltaTime;
 
   let theta = Math.atan2(-velocity.z, velocity.x);
-  if(bodyAircraft[0] != undefined)
+
+  if (theta > 0.0 && headingBackup < 0.0)
   {
-    bodyAircraft[0].rotation.y = theta;
+    headingBackup = -headingBackup;
+  }
+
+  if(Math.abs(headingBackup - theta) > 0.01)
+  {
+    if(Math.abs(headingBackup - theta) > 0.05)
+    {
+      if(headingBackup < theta)
+      {
+        headingBackup += 0.005;
+        body.rotateY(0.005);
+      }
+      else
+      {
+        headingBackup -= 0.005;
+        body.rotateY(-0.005);
+      }
+    }
+    else
+    {
+      if(headingBackup < theta)
+      {
+        headingBackup += 0.001;
+        body.rotateY(0.001);
+      }
+      else
+      {
+        headingBackup -= 0.001;
+        body.rotateY(-0.001);
+      }
+    }
   }
 
   // Update position
@@ -464,7 +375,7 @@ function simulateFlightStep(
   if(body.position != undefined)
   {
     body.position.x = position.z / 100;
-    body.position.y = position.y / 100;
+    body.position.y = position.y / 500;
     body.position.z = - position.x / 100;
   }
 
@@ -498,33 +409,33 @@ function explosionAnimation()
 
 var render = function() {
 
-  var testSituation = simulateFlightStep(testPosition, testVelocity, testAcceleration, 16.5, 3200, {x: 1, y:0, z:0}, 1, 1/30);
-  console.log("p : ",testSituation.velocity);
-
-  testPosition = testSituation.position;
-  testVelocity = testSituation.velocity;
-  testAcceleration = testSituation.acceleration;
-
-  explosionAnimation()
-
-  updateWeaponSystem();
-
   setTimeout( function() {
     requestAnimationFrame( render );
   }, 1000 / 30 );
 
-  if (!pauseSimulation)
+  if (fullAircraftLoaded)
   {
-    controls.update();
+    if (!pauseSimulation)
+    {
+      explosionAnimation()
 
-    if (!droneCrashed) {
-      updateBody();
+      updateWeaponSystem();
 
-      landingGearUpdate(gearUP, gearObject[0], gearObjectR[0], gearObjectL[0]);
+      controls.update();
 
-      apUpdate();
+      if (!droneCrashed) {
+
+        var testSituation = simulateFlightStep(testPosition, testVelocity, testAcceleration, 16.5, 3200, directionGlobal, 1, 1/30);
+
+        testPosition = testSituation.position;
+        testVelocity = testSituation.velocity;
+        testAcceleration = testSituation.acceleration;
+
+        updateBody();
+
+        landingGearUpdate(gearUP, gearObject[0], gearObjectR[0], gearObjectL[0]);
+      }
     }
-
   }
 
   renderer.render(scene, camera);
@@ -623,13 +534,11 @@ function cameraPosition()
 function pitchUp()
 {
   realPitch -= 0.0005;
-  realPitch = Math.max(realPitch, -0.005);
 }
 
 function pitchDown()
 {
   realPitch += 0.0005;
-  realPitch = Math.min(realPitch, 0.005);
 }
 
 function rollRight()

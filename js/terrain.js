@@ -22,10 +22,7 @@ class Terrain {
 
     let perlingVal = Math.abs(noise.simplex2(posZ / this.resolution, posX / this.resolution)) * this.maxHeight;
 
-    if (Math.random() > 0.95) {
-      return ((perlingVal-20) > positionDrone.y);
-    }
-    return false;
+    return ((perlingVal-20) > positionDrone.y);
   }
 
   initTerrain() {
