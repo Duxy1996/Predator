@@ -1,3 +1,6 @@
+
+var dirs = [];
+
 function ExplodeAnimation(x, y, z)
 {
   var colors = [0xec0d0d];

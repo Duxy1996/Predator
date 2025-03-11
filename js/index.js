@@ -1,3 +1,4 @@
+
 let scene        = new THREE.Scene();
 let ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
 
@@ -7,10 +8,9 @@ heighValue = Math.random() * 40;
 
 // MAX weight 4760
 
-const wingSpan      = 16.8;
-const airDensity    = 75.6;
+const wingSpan      = 20.1;
 
-terrainLoader = new Terrain(220.0, heighValue, 600.0, 600.0, 1000.0, 1000.0);
+terrainLoader = new Terrain(220.0, heighValue, 600.0, 600.0, 1500.0, 1500.0);
 
 let planeTerrain = terrainLoader.initTerrain()
 
@@ -21,6 +21,7 @@ cameraDrone.position.z = -1;
 camera.position.z = 4;
 
 var directionGlobal = {x: 1, y:0, z:0};
+var weaponDirection = {x: 1, y:0, z:0};
 
 camera.add( listener );
 scene.add( planeTerrain );
@@ -52,17 +53,18 @@ document.body.appendChild( renderer.domElement );
 
 var fullAircraftLoaded = false;
 
-var dirs = [];
+
 var parts = [];
 
 var isPropeller;
 
-var realHeading = 0;
-var headingBackup = 0;
-var realPitch    = 0;
-var realRoll     = 0;
-var rollBackup   = 0.0;
-var headingCommanded = 0;
+var realHeading      = 0.0;
+var headingBackup    = 0.0;
+var realPitch        = 0.0;
+var pitchBackp       = 0.0;
+var realRoll         = 0.0;
+var rollBackup       = 0.0;
+var headingCommanded = 0.0;
 
 var path      = './objects/MQ-9-Predator/';
 
@@ -84,7 +86,7 @@ let GBUObjectL   = [];
 
 // These are the initial values, this like the "Santo grial" og this simulation
 var testPosition     = {x: 0, y: 10, z: 0}
-var testVelocity     = {x: 120, y: 0, z: 0}
+var testVelocity     = {x: 80, y: 0, z: 0}
 var testAcceleration = {x: 0, y: 0, z: 0}
 
 var gearUP       = true;
@@ -129,7 +131,8 @@ new Promise(function(resolve) {
             }).then(function(result) {
               if(terrainLoader.getTerrainElevation(testPosition))
                 {
-                  testPosition.y = 600.0;
+                  console.log("DEP");
+                  window.location.reload();
                 }
               fullAircraftLoaded = true;
               bodyAircraft[0].add(helperPivoteGBULRef[0]);
@@ -139,6 +142,8 @@ new Promise(function(resolve) {
               bodyAircraft[0].add(helperPivoteGBURRef[0]);
               bodyAircraft[0].add(sphereHelper[0]);
               bodyAircraft[0].add(sphere)
+              body.rotateX( 5 / 180.0 *3.14159264 );
+              pitchBackp +=  5 / 180.0 *3.14159264;
               scene.add( body );
             });
           });
@@ -189,15 +194,20 @@ function updateBody() {
   if (body.position != undefined)
   {
     directionGlobal = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( body.quaternion );
+    weaponDirection = directionGlobal;
     directionGlobal = {x: directionGlobal.z * -1, y: directionGlobal.y, z: directionGlobal.x};
 
     let generalThrust = updateThrust();
 
     currentSpeed = Math.round(generalThrust * 43400) / 10;
 
-    document.getElementById("speedMeter").innerHTML = currentSpeed + "\n Km/h";
-    document.getElementById("rollRateNumber").innerHTML = Math.round(realRoll / 0.0005 * 10) / 10;
-    document.getElementById("pitchRateNumber").innerHTML = Math.round(realPitch / 0.0005 * 10) / 10;
+    let velocityMagnitudeXZ = Math.sqrt(
+      testVelocity.x * testVelocity.x + testVelocity.z * testVelocity.z
+    );
+
+    document.getElementById("speedMeter").innerHTML = Math.round(velocityMagnitudeXZ * 60.0 * 60.0 / 1000.0 * 10.0) / 10.0 + "\n Km/h";
+    document.getElementById("rollRateNumber").innerHTML = Math.round(rollBackup * 1800.0 / 3.14159264) / 10;
+    document.getElementById("pitchRateNumber").innerHTML = Math.round(pitchBackp * 1800.0 / 3.14159264) / 10;
 
     controls.target.z = body.position.z;
     controls.target.x = body.position.x;
@@ -218,6 +228,7 @@ function updateBody() {
     }
 
     body.rotateX( realPitch );
+    pitchBackp += realPitch;
     body.rotateZ( realRoll );
     rollBackup += realRoll;
   }
@@ -236,9 +247,9 @@ function simulateFlightStep(
   const gravity = 9.81;         // m/s^2
   const dragCoefficient = 0.06; // Simplified drag coefficient
   const airDensity = 1.225;     // kg/m^3 at sea level
-  const maxThrust = 28553.59;   // N/m
-  const alpha_zero = 0.00;
-  const alpha_slope = 1.45; // This is bcs with 5 degrees give us 0.3 lifCoef
+  const maxThrust = 9120.59;   // N/m
+  const alpha_zero = 0.01;
+  const alpha_slope = 4.12; // This is bcs with 5 degrees give us 0.3 lifCoef
   let liftCoefficient = 0.3;  // Simplified lift coefficient
 
   let currentPitch = 0.0;
@@ -247,6 +258,11 @@ function simulateFlightStep(
   {
     currentPitch = body.rotation.x;
     liftCoefficient = alpha_slope * (currentPitch - alpha_zero);
+    if(currentPitch > 17.0 /180.0 *3.141592 )
+    {
+      let clMaxStall = alpha_slope * (17.0 /180.0 *3.141592 - alpha_zero)
+      liftCoefficient = clMaxStall - 0.1 * (currentPitch - 17.0 /180.0 *3.141592) * (currentPitch - 17.0 /180.0 *3.141592) * 200;
+    }
   }
 
   // Calculate total velocity magnitude
@@ -300,7 +316,7 @@ function simulateFlightStep(
   acceleration.z += (computeThurst * direction.z) / weight;
 
   // Update acceleration
-  acceleration.y = ((lift - weight * gravity) / weight) - ((velocity.y * dragMagnitudeYAxis) / weight) * 0.1;// need to add drag which is velocity on y mult by dragmagnitude on y which is like dragmagitude but witt y speed;
+  acceleration.y = ((lift - weight * gravity) / weight) - ((velocity.y * dragMagnitudeYAxis) / weight) * 0.1;
 
   if(position.y <= 1)
   {
@@ -374,9 +390,9 @@ function simulateFlightStep(
 
   if(body.position != undefined)
   {
-    body.position.x = position.z / 100;
-    body.position.y = position.y / 500;
-    body.position.z = - position.x / 100;
+    body.position.x = position.z / 40;
+    body.position.y = position.y / 100;
+    body.position.z = - position.x / 40;
   }
 
   return { position, velocity, acceleration };
@@ -425,7 +441,7 @@ var render = function() {
 
       if (!droneCrashed) {
 
-        var testSituation = simulateFlightStep(testPosition, testVelocity, testAcceleration, 16.5, 3200, directionGlobal, 1, 1/30);
+        var testSituation = simulateFlightStep(testPosition, testVelocity, testAcceleration, wingSpan, 3200, directionGlobal, 1, 1/30);
 
         testPosition = testSituation.position;
         testVelocity = testSituation.velocity;
