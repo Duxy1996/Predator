@@ -27,11 +27,17 @@
       </div>
     </div>
 
-    <div class="float-button gear-position" onclick="gearChange()"><img class="landing-gear" src="assets/noun_plane wheel_1671535.svg" alt="plane rotating"></div>
+    <div class="float-button gear-position" onclick="gearChange()">
+      <img class="landing-gear" src="assets/noun_plane wheel_1671535.svg" alt="plane rotating">
+    </div>
 
-    <div class="float-button camera-position" onclick="cameraPosition()"><img class="landing-gear" src="assets/noun_Camera_3601420.svg" alt="plane rotating"></div>
+    <div class="float-button camera-position" onclick="cameraPosition()">
+      <img class="landing-gear" src="assets/noun_Camera_3601420.svg" alt="plane rotating">
+    </div>
 
-    <div class="float-button gbu-position" onclick="launchBomb()"><img class="landing-gear" src="assets/noun_Bomb_933214.svg" alt="plane rotating"></div>
+    <div class="float-button gbu-position" onclick="launchBomb()">
+      <img class="landing-gear" src="assets/noun_Bomb_933214.svg" alt="plane rotating">
+    </div>
 
     <div class="float-button-big heading-position" onclick="heading()">
       <div class="float-button-big-content">
@@ -51,12 +57,31 @@
       </div>
     </div>
 
-    <div id="flight-joystick" class="flight-joystick" role="application" aria-label="Joystick: move horizontally to control roll and vertically to control pitch">
+    <div id="flight-joystick" class="flight-joystick" role="application"
+      aria-label="Joystick: move horizontally to control roll and vertically to control pitch">
       <div class="flight-joystick-base">
         <div id="flight-joystick-stick" class="flight-joystick-stick"></div>
       </div>
       <span class="joystick-label joystick-roll-label">ROLL</span>
       <span class="joystick-label joystick-pitch-label">PITCH</span>
+    </div>
+
+    <div id="flight-hud" class="flight-hud" aria-label="Flight information" hidden>
+      <div class="flight-hud-reading">
+        <span>Speed</span>
+        <strong id="flight-hud-speed">0</strong>
+        <small>km/h</small>
+      </div>
+      <div class="flight-hud-reading">
+        <span>Altitude</span>
+        <strong id="flight-hud-altitude">0</strong>
+        <small>m AGL</small>
+      </div>
+      <div class="flight-hud-reading">
+        <span>Pitch</span>
+        <strong id="flight-hud-pitch">0°</strong>
+        <small>degrees</small>
+      </div>
     </div>
 
     <input id="throttle" class="throttle-slider thrust slider" type="range"/>

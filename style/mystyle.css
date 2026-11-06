@@ -155,6 +155,50 @@ body {
   text-align: center;
 }
 
+.flight-hud {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: min(440px, calc(100vw - 32px));
+  padding: 10px 12px;
+  border: 2px solid rgba(125, 255, 190, 0.85);
+  border-radius: 6px;
+  background: rgba(8, 24, 21, 0.72);
+  color: #ffffff;
+  font-family: monospace;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.flight-hud[hidden] {
+  display: none;
+}
+
+.flight-hud-reading {
+  display: grid;
+  gap: 2px;
+}
+
+.flight-hud-reading span {
+  color: #9affc2;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.flight-hud-reading strong {
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.flight-hud-reading small {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 10px;
+}
+
 .flight-joystick {
   position: fixed;
   left: 50%;
@@ -409,6 +453,25 @@ body {
     width: 44px;
     height: 44px;
     border-width: 3px;
+  }
+
+  .flight-hud {
+    top: calc(env(safe-area-inset-top) + 60px);
+    width: min(300px, calc(100vw - 140px));
+    padding: 6px 4px;
+    border-width: 1px;
+  }
+
+  .flight-hud-reading span {
+    font-size: 9px;
+  }
+
+  .flight-hud-reading strong {
+    font-size: 17px;
+  }
+
+  .flight-hud-reading small {
+    font-size: 8px;
   }
 
   .model-selector-panel {

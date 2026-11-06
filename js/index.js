@@ -1,4 +1,9 @@
 
+const SIMULATION_DELTA_TIME = 1 / 30;
+const SIMULATION_FRAME_INTERVAL = SIMULATION_DELTA_TIME * 1000;
+const METERS_PER_SECOND_TO_KMH = 3.6;
+const SPEED_DISPLAY_SCALE = METERS_PER_SECOND_TO_KMH * 10;
+
 let scene        = new THREE.Scene();
 let ambientLight = new THREE.AmbientLight( 0xffffff, 0.55 );
 let sunlight = new THREE.DirectionalLight( 0xffffff, 0.85 );
@@ -11,7 +16,8 @@ terrainHeight = 32 + Math.random() * 8;
 
 terrain = new Terrain(220.0, terrainHeight, 600.0, 600.0, 1500.0, 1500.0);
 
-let terrainMesh = terrain.initTerrain()
+let terrainGroup = terrain.initTerrain()
+
 sunlight.position.set(-180, 260, 120);
 
 let camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
@@ -20,16 +26,27 @@ let cameraDrone = new THREE.PerspectiveCamera( 45, window.innerWidth / window.in
 cameraDrone.position.z = -1;
 camera.position.z = 4;
 
-var aircraftDirection = {x: 1, y:0, z:0};
-var weaponDirection = {x: 1, y:0, z:0};
+var isAircraftCameraActive = false;
+var flightHud = {
+  element: document.getElementById("flight-hud"),
+  speed: document.getElementById("flight-hud-speed"),
+  altitude: document.getElementById("flight-hud-altitude"),
+  pitch: document.getElementById("flight-hud-pitch"),
+  lastUpdate: 0
+};
+var throttleElement = document.getElementById("throttle");
+var speedMeterElement = document.getElementById("speedMeter");
+var lastSpeedMeterText = "";
+
+var weaponDirection = new THREE.Vector3(0, 0, -1);
 
 camera.add( listener );
-scene.add( terrainMesh );
+scene.add( terrainGroup );
 scene.add( ambientLight );
 scene.add( sunlight );
 scene.fog = new THREE.Fog(0x9bb8c9, 250, 1200);
 
-document.getElementById("throttle").value = 50;
+throttleElement.value = 50;
 
 var renderer  = new THREE.WebGLRenderer({antialias:true});
 var controls  = new THREE.OrbitControls( camera, renderer.domElement );
@@ -218,21 +235,18 @@ function onError()
   //console.log("Error");
 }
 
-function updateBody(generalThrust) {
+function updateBody() {
 
   if (aircraftObject.position != undefined)
   {
-    aircraftDirection = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( aircraftObject.quaternion );
-    weaponDirection = aircraftDirection;
-    aircraftDirection = {x: aircraftDirection.z * -1, y: aircraftDirection.y, z: aircraftDirection.x};
+    weaponDirection.set(0, 0, -1).applyQuaternion(aircraftObject.quaternion);
 
-    currentSpeed = Math.round(generalThrust * 2170) / 10;
-
-    let velocityMagnitudeXZ = Math.sqrt(
-      aircraftVelocity.x * aircraftVelocity.x + aircraftVelocity.z * aircraftVelocity.z
-    );
-
-    document.getElementById("speedMeter").innerHTML = Math.round(velocityMagnitudeXZ * 60.0 * 60.0 / 1000.0 * 10.0) / 10.0 + "\n Km/h";
+    const speedMeterText = (Math.round(flightModel.horizontalSpeed * SPEED_DISPLAY_SCALE) / 10)
+      + " Km/h";
+    if (speedMeterText !== lastSpeedMeterText) {
+      speedMeterElement.textContent = speedMeterText;
+      lastSpeedMeterText = speedMeterText;
+    }
 
     controls.target.z = aircraftObject.position.z;
     controls.target.x = aircraftObject.position.x;
@@ -251,6 +265,31 @@ function updateBody(generalThrust) {
     }
 
   }
+}
+
+function updateFlightHud() {
+  if (!isAircraftFullyLoaded || !isAircraftCameraActive) {
+    return;
+  }
+
+  const now = performance.now();
+  if (now - flightHud.lastUpdate < 100) {
+    return;
+  }
+  flightHud.lastUpdate = now;
+
+  const speed = Math.round(Math.sqrt(
+    aircraftVelocity.x * aircraftVelocity.x
+      + aircraftVelocity.y * aircraftVelocity.y
+      + aircraftVelocity.z * aircraftVelocity.z
+  ) * METERS_PER_SECOND_TO_KMH);
+  const altitude = Math.max(0, Math.round(
+    aircraftPosition.y - terrain.getTerrainHeight(aircraftPosition)
+  ));
+  const pitch = Math.round(aircraftObject.rotation.x * radiansToDegrees);
+  flightHud.speed.textContent = String(speed);
+  flightHud.altitude.textContent = String(altitude);
+  flightHud.pitch.textContent = (pitch > 0 ? "+" : "") + pitch + "\u00b0";
 }
 
 function explosionAnimation()
@@ -284,11 +323,13 @@ function triggerAircraftCrash() {
   sound.stop();
 }
 
-var render = function() {
+var render = function(timestamp) {
+  window.requestAnimationFrame(render);
 
-  setTimeout( function() {
-    requestAnimationFrame( render );
-  }, 1000 / 30 );
+  if (render.lastFrameTime && timestamp - render.lastFrameTime < SIMULATION_FRAME_INTERVAL) {
+    return;
+  }
+  render.lastFrameTime = timestamp;
 
   if (isAircraftFullyLoaded)
   {
@@ -301,29 +342,37 @@ var render = function() {
       controls.update();
 
       if (!hasAircraftCrashed) {
-        var generalThrust = flightModel.updateThrust(document.getElementById("throttle").value);
+        var generalThrust = flightModel.updateThrust(throttleElement.value);
 
-        flightModel.updateAttitude(aircraftObject, rollInput, pitchInput, 1/30);
-        flightModel.simulateStep(aircraftPosition, aircraftVelocity, generalThrust, 1/30, aircraftObject);
+        flightModel.updateAttitude(aircraftObject, rollInput, pitchInput, SIMULATION_DELTA_TIME);
+        flightModel.simulateStep(
+          aircraftPosition,
+          aircraftVelocity,
+          generalThrust,
+          SIMULATION_DELTA_TIME,
+          aircraftObject
+        );
 
-        updateBody(generalThrust);
+        updateBody();
 
         landingGearUpdate(isLandingGearUp, frontWheelObjects[0], leftWheelObjects[0], rightWheelObjects[0]);
       }
     }
   }
 
+  updateFlightHud();
   renderer.render(scene, camera);
 };
 
 window.addEventListener('resize', onWindowResize, false );
 window.addEventListener('keypress', logKey, false);
-window.requestAnimationFrame(render);
 
 function onWindowResize()
 {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
+  cameraDrone.aspect = window.innerWidth / window.innerHeight;
+  cameraDrone.updateProjectionMatrix();
   renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
@@ -393,6 +442,9 @@ function cameraPosition()
   let cameraHelper = camera;
   camera           = cameraDrone;
   cameraDrone      = cameraHelper;
+  isAircraftCameraActive = !isAircraftCameraActive;
+  flightHud.element.hidden = !isAircraftCameraActive;
+  flightHud.lastUpdate = 0;
 }
 
 function setupFlightJoystick() {
@@ -471,5 +523,4 @@ function heading()
 }
 
 setupFlightJoystick();
-
-render();
+window.requestAnimationFrame(render);

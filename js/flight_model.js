@@ -22,13 +22,16 @@ class FlightModel {
       maxPitchRate: 25 * degreesToRadians,
       rollResponse: 3,
       pitchResponse: 3,
+      rollReturnResponse: 2.4,
+      pitchReturnResponse: 2.4,
       rollDamping: 1.5,
       pitchDamping: 1.5,
       maxRollAcceleration: 90 * degreesToRadians,
       maxPitchAcceleration: 60 * degreesToRadians,
       sideSlipDamping: 1.5,
       headingAlignment: 2,
-      maxHeadingCorrectionRate: 20 * degreesToRadians
+      maxHeadingCorrectionRate: 20 * degreesToRadians,
+      bankTurnBoost: 0.1
     }, parameters);
 
     // Aspect ratio and induced-drag factor stay fixed for this model instance.
@@ -36,6 +39,12 @@ class FlightModel {
       / this.parameters.wingArea;
     this.inducedDragFactor = 1
       / (Math.PI * this.aspectRatio * this.parameters.oswaldEfficiency);
+    this.inverseMass = 1 / this.parameters.mass;
+    this.dynamicPressureAreaPerMass = 0.5
+      * this.parameters.airDensity
+      * this.parameters.wingArea
+      * this.inverseMass;
+    this.thrustAccelerationAtFullPower = this.parameters.maxThrust * this.inverseMass;
 
     // Reuse these vectors each frame instead of allocating new objects in the hot path.
     this.threeForward = new THREE.Vector3();
@@ -43,6 +52,7 @@ class FlightModel {
     this.threeRight = new THREE.Vector3();
     this.threeWorldUp = new THREE.Vector3(0, 1, 0);
     this.acceleration = { x: 0, y: 0, z: 0 };
+    this.horizontalSpeed = 0;
     this.rollRate = 0;
     this.pitchRate = 0;
   }
@@ -57,13 +67,19 @@ class FlightModel {
     const pitchTarget = Math.max(-1, Math.min(1, pitchCommand)) * parameters.maxPitchAngle;
     const rollError = rollTarget - body.rotation.z;
     const pitchError = pitchTarget - body.rotation.x;
+    const rollResponse = rollCommand === 0
+      ? parameters.rollReturnResponse
+      : parameters.rollResponse;
+    const pitchResponse = pitchCommand === 0
+      ? parameters.pitchReturnResponse
+      : parameters.pitchResponse;
     const targetRollRate = Math.max(-parameters.maxRollRate, Math.min(
       parameters.maxRollRate,
-      rollError * parameters.rollResponse - this.rollRate * parameters.rollDamping
+      rollError * rollResponse - this.rollRate * parameters.rollDamping
     ));
     const targetPitchRate = Math.max(-parameters.maxPitchRate, Math.min(
       parameters.maxPitchRate,
-      pitchError * parameters.pitchResponse - this.pitchRate * parameters.pitchDamping
+      pitchError * pitchResponse - this.pitchRate * parameters.pitchDamping
     ));
 
     this.rollRate += Math.max(
@@ -103,7 +119,7 @@ class FlightModel {
     // +X is forward, +Y is up, and +Z is to the aircraft's right.
     this.threeForward.set(0, 0, -1).applyQuaternion(body.quaternion);
     this.threeUp.set(0, 1, 0).applyQuaternion(body.quaternion);
-    this.threeRight.set(1, 0, 0).applyQuaternion(body.quaternion);
+    this.threeRight.crossVectors(this.threeForward, this.threeUp);
     const forwardX = -this.threeForward.z;
     const forwardY = this.threeForward.y;
     const forwardZ = this.threeForward.x;
@@ -141,12 +157,15 @@ class FlightModel {
       );
     }
 
-    const dynamicPressure = 0.5 * parameters.airDensity * speedSquared;
-    const liftMagnitude = dynamicPressure * parameters.wingArea * liftCoefficient;
     const dragCoefficient = parameters.zeroLiftDragCoefficient
       + liftCoefficient * liftCoefficient * this.inducedDragFactor;
-    const dragMagnitude = dynamicPressure * parameters.wingArea * dragCoefficient;
-    const thrustMagnitude = throttle * parameters.maxThrust;
+    const liftAcceleration = speedSquared
+      * this.dynamicPressureAreaPerMass
+      * liftCoefficient;
+    const dragAcceleration = speedSquared
+      * this.dynamicPressureAreaPerMass
+      * dragCoefficient;
+    const thrustAcceleration = throttle * this.thrustAccelerationAtFullPower;
 
     // Lift is perpendicular to the airflow and follows the aircraft's bank.
     const velocityUnitX = speed > 0 ? velocity.x / speed : 0;
@@ -167,18 +186,17 @@ class FlightModel {
     }
 
     // Apply thrust, lift, drag, and gravity, then integrate velocity and position.
-    const inverseMass = 1 / parameters.mass;
     const acceleration = this.acceleration;
-    acceleration.x = (thrustMagnitude * forwardX
-      + liftMagnitude * liftX
-      - dragMagnitude * velocityUnitX) * inverseMass;
-    acceleration.y = (thrustMagnitude * forwardY
-      + liftMagnitude * liftY
-      - dragMagnitude * velocityUnitY) * inverseMass
+    acceleration.x = thrustAcceleration * forwardX
+      + liftAcceleration * liftX
+      - dragAcceleration * velocityUnitX;
+    acceleration.y = thrustAcceleration * forwardY
+      + liftAcceleration * liftY
+      - dragAcceleration * velocityUnitY
       - parameters.gravity;
-    acceleration.z = (thrustMagnitude * forwardZ
-      + liftMagnitude * liftZ
-      - dragMagnitude * velocityUnitZ) * inverseMass;
+    acceleration.z = thrustAcceleration * forwardZ
+      + liftAcceleration * liftZ
+      - dragAcceleration * velocityUnitZ;
 
     // Dampen airflow across the fuselage so the aircraft does not accumulate
     // sideways drift in the simulation's no-wind environment.
@@ -201,6 +219,7 @@ class FlightModel {
 
     // Follow the turn and gently align the nose with the no-wind flight path.
     const horizontalSpeedSquared = velocity.x * velocity.x + velocity.z * velocity.z;
+    this.horizontalSpeed = Math.sqrt(horizontalSpeedSquared);
     if (horizontalSpeedSquared > 0) {
       const turnRate = (velocity.z * acceleration.x - velocity.x * acceleration.z)
         / horizontalSpeedSquared;
@@ -215,9 +234,14 @@ class FlightModel {
           headingError * parameters.headingAlignment
         )
       );
+      const bankTurnFactor = Math.min(
+        1,
+        Math.abs(body.rotation.z) / parameters.maxBankAngle
+      );
+      const bankedTurnRate = turnRate * (1 + parameters.bankTurnBoost * bankTurnFactor);
       body.rotateOnWorldAxis(
         this.threeWorldUp,
-        (turnRate - headingCorrectionRate) * deltaTime
+        (bankedTurnRate - headingCorrectionRate) * deltaTime
       );
     }
 

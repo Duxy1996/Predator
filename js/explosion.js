@@ -104,10 +104,14 @@ function DirectionalExplosion(x, y, z, direction)
 
   let geometry = new THREE.Geometry();
 
-  let particleVelocities = [];
+  let particleVelocities = new Float32Array(totalObjects / 2 * 3);
 
   let directionThree = new THREE.Vector3(direction.x, direction.y, direction.z);
   directionThree.normalize();
+  let initialDirection = new THREE.Vector3(0, 0, -1);
+  let quaternion = new THREE.Quaternion();
+  quaternion.setFromUnitVectors(initialDirection, directionThree);
+  let velocity = new THREE.Vector3();
 
   for (let i = 0; i < totalObjects / 2; i++)
   {
@@ -115,28 +119,16 @@ function DirectionalExplosion(x, y, z, direction)
 
     geometry.vertices.push( vertex );
 
+    const velocityIndex = i * 3;
+    const dispersionX = (Math.random() - 1) * movementSpeed / 100;
+    const dispersionY = (Math.random() - 1) * movementSpeed / 100;
+    const dispersionZ = (Math.random() - 0.5) * movementSpeed;
+    velocity.set(dispersionX, dispersionY, dispersionZ)
+      .applyQuaternion(quaternion);
 
-    let particleDispersion = {x:(Math.random() * movementSpeed/100) - (movementSpeed/100),
-                              y:(Math.random() * movementSpeed/100) - (movementSpeed/100),
-                              z:(Math.random() * movementSpeed) - (movementSpeed/2)};
-
-
-    let velocity = new THREE.Vector3(particleDispersion.x, particleDispersion.y, particleDispersion.z);
-
-    let initialDirection = new THREE.Vector3(0, 0, -1);
-
-    // Create a quaternion to rotate from initialDirection to direction.
-    let quaternion = new THREE.Quaternion();
-    quaternion.setFromUnitVectors(initialDirection, direction);
-
-    // Apply the quaternion to the velocity vector.
-    let alignedVelocity = velocity.clone().applyQuaternion(quaternion);
-
-
-
-    particleVelocities.push({x: -alignedVelocity.x,
-                             y: alignedVelocity.y,
-                             z: alignedVelocity.z});
+    particleVelocities[velocityIndex] = -velocity.x;
+    particleVelocities[velocityIndex + 1] = velocity.y;
+    particleVelocities[velocityIndex + 2] = velocity.z;
 
   }
 
@@ -163,10 +155,11 @@ function DirectionalExplosion(x, y, z, direction)
     if (this.status == true){
       var pCount = totalObjects/2;
       while(pCount--) {
-        var particle =  this.object.geometry.vertices[pCount]
-        particle.y += particleVelocities[pCount].y;
-        particle.x -= particleVelocities[pCount].x;
-        particle.z += particleVelocities[pCount].z;
+        var particle = this.object.geometry.vertices[pCount];
+        var velocityIndex = pCount * 3;
+        particle.y += particleVelocities[velocityIndex + 1];
+        particle.x -= particleVelocities[velocityIndex];
+        particle.z += particleVelocities[velocityIndex + 2];
       }
       this.object.geometry.verticesNeedUpdate = true;
       this.iterations++;
