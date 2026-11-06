@@ -14,6 +14,18 @@
     </style>
   </head>
   <body>
+    <div id="model-selector" class="model-selector" role="dialog" aria-modal="true" aria-labelledby="model-selector-title">
+      <div class="model-selector-panel">
+        <h1 id="model-selector-title">Elige aeronave</h1>
+        <p>Selecciona el modelo para iniciar la simulación.</p>
+        <div class="model-selector-options">
+          <button type="button" onclick="startSimulation('predator')">Predator MQ-9</button>
+          <button type="button" onclick="startSimulation('c101')">CASA C-101</button>
+        </div>
+        <p id="model-selector-status" class="model-selector-status" aria-live="polite"></p>
+      </div>
+    </div>
+
     <div class="float-button gear-position" onclick="gearChange()"><img class="landing-gear" src="assets/noun_plane wheel_1671535.svg" alt="plane rotating"></div>
 
     <div class="float-button camera-position" onclick="cameraPosition()"><img class="landing-gear" src="assets/noun_Camera_3601420.svg" alt="plane rotating"></div>

@@ -38,8 +38,6 @@ controls.maxDistance = 30;
 let pauseSimulation = true;
 let droneCrashed    = false;
 
-setTimeout(function(){pauseSimulation = false;}, 4000);
-
 var holdHeading = false;
 
 renderer.setClearColor("#5566FF");
@@ -64,13 +62,30 @@ var headingCommanded = 0.0;
 
 var path      = './objects/MQ-9-Predator/';
 
-var fileName  = 'Vehicle';
 var weaponR   = 'Right-GBU';
 var weaponL   = 'Left-GBU';
 var propT     = 'Back-Prop';
 var gearF     = 'Front-wheel';
 var gearL     = 'Left-wheel';
 var gearR     = 'Right-wheel';
+var aircraftScale = 10;
+var aircraftSelectionStarted = false;
+var aircraftModels = {
+  predator: {
+    label: 'Predator MQ-9',
+    path: './objects/MQ-9-Predator/',
+    file: 'Vehicle',
+    scale: 10,
+    hasMaterials: true
+  },
+  c101: {
+    label: 'CASA C-101',
+    path: './objects/C-101/',
+    file: 'FixedWing.C-101.obj',
+    scale: 0.2,
+    hasMaterials: false
+  }
+};
 
 var body         = [];
 var threeObject  = [];
@@ -105,10 +120,77 @@ var helperPivotGearRRef = [helperPivotGearR];
 var helperPivotGearL = pivotFactory(0.01, -0.002, 0.020);
 var helperPivotGearLRef = [helperPivotGearL];
 
-function loadModel(file, objects, callback, pivot) {
-  return new Promise(function(resolve) {
-    loaderMTLTexture(resolve, path, file, objects, callback, pivot);
+function loadModel(file, objects, callback, pivot, modelPath) {
+  return new Promise(function(resolve, reject) {
+    var mtlLoader = new THREE.MTLLoader();
+    mtlLoader
+      .setPath(modelPath || path)
+      .load(
+        file + '.mtl',
+        function(material) {
+          material.preload();
+          loadObjModel(modelPath || path, file + '.obj', material, objects, callback, pivot)
+            .then(resolve, reject);
+        },
+        undefined,
+        reject
+      );
   });
+}
+
+function loadSelectedAircraft(aircraft) {
+  aircraftScale = aircraft.scale;
+
+  if (aircraft.hasMaterials) {
+    return loadModel(aircraft.file, bodyAircraft, loadAircraft, undefined, aircraft.path);
+  }
+
+  return loadObjModel(aircraft.path, aircraft.file, undefined, bodyAircraft, loadAircraft);
+}
+
+function startSimulation(modelName) {
+  if (aircraftSelectionStarted || !Object.prototype.hasOwnProperty.call(aircraftModels, modelName)) {
+    return;
+  }
+
+  aircraftSelectionStarted = true;
+  var selector = document.getElementById("model-selector");
+  var status = document.getElementById("model-selector-status");
+  var buttons = selector.querySelectorAll("button");
+  var aircraft = aircraftModels[modelName];
+
+  buttons.forEach(function(button) {
+    button.disabled = true;
+  });
+  status.textContent = "Cargando " + aircraft.label + "...";
+
+  loadSelectedAircraft(aircraft)
+    .then(function() {
+      return Promise.all([
+        loadModel(weaponR, threeObject, loadWithPivot, helperPivoteGBURRef),
+        loadModel(weaponL, GBUObjectL, loadWithPivot, helperPivoteGBULRef),
+        loadModel(propT, threeObject, loadPropeller),
+        loadModel(gearF, gearObject, loadWithPivot, helperPivotGearFRef),
+        loadModel(gearL, gearObjectR, loadWithPivot, helperPivotGearRRef),
+        loadModel(gearR, gearObjectL, loadWithPivot, helperPivotGearLRef)
+      ]);
+    })
+    .then(finishAircraftLoading)
+    .then(function() {
+      status.textContent = "";
+      selector.hidden = true;
+      setTimeout(function() {
+        pauseSimulation = false;
+      }, 4000);
+    })
+    .catch(function(error) {
+      console.error("No se pudo cargar " + aircraft.label + ".", error);
+      status.textContent = "No se pudo cargar " + aircraft.label + ". Revisa la consola.";
+      buttons.forEach(function(button) {
+        button.disabled = false;
+      });
+      aircraftSelectionStarted = false;
+    });
 }
 
 function finishAircraftLoading() {
@@ -129,27 +211,6 @@ function finishAircraftLoading() {
   pitchBackp += 5 * DEGREES_TO_RADIANS;
   scene.add(body);
 }
-
-loadModel(fileName, bodyAircraft, loadAircraft)
-  .then(function() {
-    return loadModel(weaponR, threeObject, loadWithPivot, helperPivoteGBURRef);
-  })
-  .then(function() {
-    return loadModel(weaponL, GBUObjectL, loadWithPivot, helperPivoteGBULRef);
-  })
-  .then(function() {
-    return loadModel(propT, threeObject, loadPropeller);
-  })
-  .then(function() {
-    return loadModel(gearF, gearObject, loadWithPivot, helperPivotGearFRef);
-  })
-  .then(function() {
-    return loadModel(gearL, gearObjectR, loadWithPivot, helperPivotGearRRef);
-  })
-  .then(function() {
-    return loadModel(gearR, gearObjectL, loadWithPivot, helperPivotGearLRef);
-  })
-  .then(finishAircraftLoading);
 
 var sphereHelper = [pivotFactory()];
 
@@ -288,48 +349,37 @@ function loadWithPivot(object, threeObject, pivot)
   pivot[0].add(object);
 }
 
-function loadObjModel(path, url, material, threeObject, callback, pivot)
-{
-  let loader       = new THREE.OBJLoader();
-  loader
-  .setMaterials( material )
-  .setPath( path )
-  .load(
-    url,
-    function ( object )
-    {
-      callback(object, threeObject, pivot);
-    },
-    onLoad(),
-    onError()
-  );
-}
+function loadObjModel(path, url, material, objects, callback, pivot) {
+  return new Promise(function(resolve, reject) {
+    var loader = new THREE.OBJLoader();
 
-function loaderMTLTexture(resolve, path, fileName, threeObject, callback, pivot)
-{
-  let mtlLoader    = new THREE.MTLLoader();
-  mtlLoader
-  .setPath( path )
-  .load(
-    fileName + '.mtl',
-    function ( material )
-    {
-      material.preload();
-      loadObjModel( path, fileName + '.obj', material, threeObject, callback, pivot );
-      resolve(2);
+    if (material) {
+      loader.setMaterials(material);
     }
-  );
+
+    loader
+      .setPath(path)
+      .load(
+        url,
+        function(object) {
+          callback(object, objects, pivot);
+          resolve(object);
+        },
+        undefined,
+        reject
+      );
+  });
 }
 
-function loadAircraft(object, threeObject)
+function loadAircraft(object, objects)
 {
   body = object;
   body.position.z = 0;
   body.position.x = 0;
   body.position.y = 0;
-  body.scale.set(10, 10, 10);
+  body.scale.set(aircraftScale, aircraftScale, aircraftScale);
   body.add(cameraDrone);
-  threeObject.push(body);
+  objects.push(body);
 }
 
 function loadPropeller(object, threeObject)
