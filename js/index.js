@@ -237,8 +237,6 @@ function updateBody(generalThrust) {
     );
 
     document.getElementById("speedMeter").innerHTML = Math.round(velocityMagnitudeXZ * 60.0 * 60.0 / 1000.0 * 10.0) / 10.0 + "\n Km/h";
-    document.getElementById("rollRateNumber").innerHTML = Math.round(rollBackup * RADIANS_TO_DEGREES * 10) / 10;
-    document.getElementById("pitchRateNumber").innerHTML = Math.round(pitchBackp * RADIANS_TO_DEGREES * 10) / 10;
 
     controls.target.z = body.position.z;
     controls.target.x = body.position.x;
@@ -400,26 +398,69 @@ function cameraPosition()
   cameraDrone      = cameraHelper;
 }
 
-function pitchUp()
-{
-  realPitch -= 0.0005;
-}
+function setupFlightJoystick() {
+  var joystick = document.getElementById("flight-joystick");
+  var stick = document.getElementById("flight-joystick-stick");
+  var activePointer = null;
 
-function pitchDown()
-{
-  realPitch += 0.0005;
-}
+  function centerJoystick() {
+    stick.style.left = "50%";
+    stick.style.top = "50%";
+    realPitch = 0;
+    realRoll = 0;
+  }
 
-function rollRight()
-{
-  realRoll -= 0.0005
-  realRoll = Math.max(realRoll, -0.01);
-}
+  function moveJoystick(event) {
+    var bounds = joystick.getBoundingClientRect();
+    var stickRadius = stick.offsetWidth / 2;
+    var maxOffsetX = bounds.width / 2 - stickRadius;
+    var maxOffsetY = bounds.height / 2 - stickRadius;
+    var offsetX = event.clientX - (bounds.left + bounds.width / 2);
+    var offsetY = event.clientY - (bounds.top + bounds.height / 2);
+    var normalizedX = offsetX / maxOffsetX;
+    var normalizedY = offsetY / maxOffsetY;
+    var magnitude = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
 
-function rollLeft()
-{
-  realRoll += 0.0005
-  realRoll = Math.min(realRoll, 0.01);
+    if (magnitude > 1) {
+      normalizedX /= magnitude;
+      normalizedY /= magnitude;
+    }
+
+    stick.style.left = "calc(50% + " + normalizedX * maxOffsetX + "px)";
+    stick.style.top = "calc(50% + " + normalizedY * maxOffsetY + "px)";
+    realRoll = -normalizedX * 0.01;
+    realPitch = normalizedY * 0.01;
+  }
+
+  joystick.addEventListener("pointerdown", function(event) {
+    if (activePointer !== null) {
+      return;
+    }
+
+    activePointer = event.pointerId;
+    joystick.setPointerCapture(activePointer);
+    moveJoystick(event);
+    event.preventDefault();
+  });
+
+  joystick.addEventListener("pointermove", function(event) {
+    if (event.pointerId === activePointer) {
+      moveJoystick(event);
+    }
+  });
+
+  function releaseJoystick(event) {
+    if (event.pointerId !== activePointer) {
+      return;
+    }
+
+    activePointer = null;
+    centerJoystick();
+  }
+
+  joystick.addEventListener("pointerup", releaseJoystick);
+  joystick.addEventListener("pointercancel", releaseJoystick);
+  joystick.addEventListener("lostpointercapture", releaseJoystick);
 }
 
 function heading()
@@ -431,5 +472,7 @@ function heading()
     realPitch = 0;
   }
 }
+
+setupFlightJoystick();
 
 render();

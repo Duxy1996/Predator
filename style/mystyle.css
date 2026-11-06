@@ -150,6 +150,81 @@ body {
   text-align: center;
 }
 
+.flight-joystick {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 2;
+  width: 160px;
+  height: 160px;
+  transform: translateX(-50%);
+  touch-action: none;
+  user-select: none;
+}
+
+.flight-joystick-base {
+  position: absolute;
+  inset: 0;
+  border: 5px solid #000000;
+  border-radius: 50%;
+  background: rgba(204, 204, 204, 0.65);
+}
+
+.flight-joystick-base:before,
+.flight-joystick-base:after {
+  position: absolute;
+  content: "";
+  background: rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.flight-joystick-base:before {
+  top: 50%;
+  left: 8%;
+  width: 84%;
+  height: 1px;
+}
+
+.flight-joystick-base:after {
+  top: 8%;
+  left: 50%;
+  width: 1px;
+  height: 84%;
+}
+
+.flight-joystick-stick {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 54px;
+  height: 54px;
+  border: 4px solid #000000;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.joystick-label {
+  position: absolute;
+  color: #333333;
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.joystick-roll-label {
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
+}
+
+.joystick-pitch-label {
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .gear-position {
   right: 10px;
   top: 5%;
@@ -165,42 +240,6 @@ body {
   top: 25%;
 }
 
-.pitch-up {
-  left: 20%;
-  bottom: 32px;
-}
-
-.pitch-number {
-  left: 25%;
-  bottom: 32px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.pitch-down {
-  left: 30%;
-  bottom: 32px;
-}
-
-.roll-left {
-  left: 70%;
-  bottom: 32px;
-}
-
-.roll-number {
-  left: 75%;
-  bottom: 32px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.roll-right {
-  left: 80%;
-  bottom: 32px;
-}
-
 .thrust {
   left: 90%;
   bottom: 20%;
@@ -211,18 +250,6 @@ body {
 .landing-gear {
   height: 100%;
   width: 100%;
-}
-
-.roll-right-img {
-  width: 100%;
-  height: auto;
-  transform: rotate(-20deg);
-}
-
-.roll-left-img {
-  width: 100%;
-  height: auto;
-  transform: rotate(+20deg);
 }
 
 .altitude-position {
@@ -259,24 +286,10 @@ body {
     background: white;
   }
 
-  .pitch-up {
-    right: 5;
-    bottom: 80;
-  }
-
-  .pitch-down {
-    right: 5;
-    bottom: 5;
-  }
-
-  .roll-left {
-    left: 80;
-    bottom: 42;
-  }
-
-  .roll-right {
-    left: 5;
-    bottom: 42;
+  .flight-joystick {
+    bottom: 16px;
+    width: 140px;
+    height: 140px;
   }
 
   .thrust {
