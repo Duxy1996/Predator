@@ -4,7 +4,7 @@ let ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
 
 heighValue = Math.random() * 40;
 
-// MQ-9 Reaper de la USAF.
+// MQ-9 Reaper of the U.S. Air Force.
 
 // MAX weight 4760
 
@@ -30,7 +30,7 @@ document.getElementById("throttle").value = 50;
 var renderer  = new THREE.WebGLRenderer({antialias:true});
 var controls  = new THREE.OrbitControls( camera, renderer.domElement );
 
-/// limit the user interaction to 30m. Enough to avoid to see the horizont.
+// Limit camera interaction to 30 m to keep the horizon out of view.
 controls.maxDistance = 30;
 
 let pauseSimulation = true;
@@ -93,7 +93,7 @@ var gearObjectR  = [];
 var gearObjectL  = [];
 let GBUObjectL   = [];
 
-// These are the initial values, this like the "Santo grial" og this simulation
+// Initial flight state for the simulation.
 var testPosition     = {x: 0, y: 10, z: 0}
 var testVelocity     = {x: 80, y: 0, z: 0}
 // Tune the defaults here, for example: new FlightModel({ maxThrust: 11000, wingArea: 24 }).
@@ -160,7 +160,7 @@ function startSimulation(modelName) {
   buttons.forEach(function(button) {
     button.disabled = true;
   });
-  status.textContent = "Cargando " + aircraft.label + "...";
+  status.textContent = "Loading " + aircraft.label + "...";
 
   loadSelectedAircraft(aircraft)
     .then(function() {
@@ -182,8 +182,8 @@ function startSimulation(modelName) {
       }, 4000);
     })
     .catch(function(error) {
-      console.error("No se pudo cargar " + aircraft.label + ".", error);
-      status.textContent = "No se pudo cargar " + aircraft.label + ". Revisa la consola.";
+      console.error("Failed to load " + aircraft.label + ".", error);
+      status.textContent = "Failed to load " + aircraft.label + ". Check the console.";
       buttons.forEach(function(button) {
         button.disabled = false;
       });

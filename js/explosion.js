@@ -117,11 +117,11 @@ function DirectionalExplosion(x, y, z, direction)
 
     let initialDirection = new THREE.Vector3(0, 0, -1);
 
-    // Crear un cuaternión para rotar de initialDirection a direction
+    // Create a quaternion to rotate from initialDirection to direction.
     let quaternion = new THREE.Quaternion();
     quaternion.setFromUnitVectors(initialDirection, direction);
 
-    // Aplicar el cuaternión al vector de velocidad
+    // Apply the quaternion to the velocity vector.
     let alignedVelocity = velocity.clone().applyQuaternion(quaternion);
 
 
