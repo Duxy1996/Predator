@@ -29,9 +29,6 @@ scene.add( ambientLight );
 
 document.getElementById("throttle").value = 50;
 
-var commandedThrust = document.getElementById("throttle").value;
-var currentThrust   = 50;
-
 var renderer  = new THREE.WebGLRenderer({antialias:true});
 var controls  = new THREE.OrbitControls( camera, renderer.domElement );
 
@@ -59,7 +56,6 @@ var parts = [];
 var isPropeller;
 
 var realHeading      = 0.0;
-var headingBackup    = 0.0;
 var realPitch        = 0.0;
 var pitchBackp       = 0.0;
 var realRoll         = 0.0;
@@ -88,6 +84,7 @@ let GBUObjectL   = [];
 var testPosition     = {x: 0, y: 10, z: 0}
 var testVelocity     = {x: 80, y: 0, z: 0}
 var testAcceleration = {x: 0, y: 0, z: 0}
+var flightModel      = new FlightModel();
 
 var gearUP       = true;
 
@@ -108,50 +105,51 @@ var helperPivotGearRRef = [helperPivotGearR];
 var helperPivotGearL = pivotFactory(0.01, -0.002, 0.020);
 var helperPivotGearLRef = [helperPivotGearL];
 
-new Promise(function(resolve) {
-  loaderMTLTexture(resolve ,path, fileName, bodyAircraft, loadAircraft );
-}).then(function(result) {
-  new Promise(function(resolve) {
-    loaderMTLTexture(resolve ,path, weaponR, threeObject, loadWithPivot, helperPivoteGBURRef );
-  }).then(function(result) {
-    new Promise(function(resolve) {
-      loaderMTLTexture(resolve ,path, weaponL, GBUObjectL, loadWithPivot, helperPivoteGBULRef );
-    }).then(function(result) {
-      new Promise(function(resolve) {
-        loaderMTLTexture(resolve ,path, propT, threeObject, loadPropeller );
-      }).then(function(result) {
-        new Promise(function(resolve) {
-          loaderMTLTexture(resolve ,path, gearF, gearObject, loadWithPivot, helperPivotGearFRef );
-        }).then(function(result) {
-          new Promise(function(resolve) {
-            loaderMTLTexture(resolve ,path, gearL, gearObjectR, loadWithPivot, helperPivotGearRRef );
-          }).then(function(result) {
-            new Promise(function(resolve) {
-              loaderMTLTexture(resolve ,path, gearR, gearObjectL, loadWithPivot, helperPivotGearLRef);
-            }).then(function(result) {
-              if(terrainLoader.getTerrainElevation(testPosition))
-                {
-                  console.log("DEP");
-                  window.location.reload();
-                }
-              fullAircraftLoaded = true;
-              bodyAircraft[0].add(helperPivoteGBULRef[0]);
-              bodyAircraft[0].add(helperPivotGearFRef[0]);
-              bodyAircraft[0].add(helperPivotGearLRef[0]);
-              bodyAircraft[0].add(helperPivotGearRRef[0]);
-              bodyAircraft[0].add(helperPivoteGBURRef[0]);
-              bodyAircraft[0].add(sphereHelper[0]);
-              bodyAircraft[0].add(sphere)
-              body.rotateX( 5 / 180.0 *3.14159264 );
-              pitchBackp +=  5 / 180.0 *3.14159264;
-              scene.add( body );
-            });
-          });
-        });
-      });
-    });
+function loadModel(file, objects, callback, pivot) {
+  return new Promise(function(resolve) {
+    loaderMTLTexture(resolve, path, file, objects, callback, pivot);
   });
-});
+}
+
+function finishAircraftLoading() {
+  if (terrainLoader.getTerrainElevation(testPosition)) {
+    console.log("DEP");
+    window.location.reload();
+  }
+
+  fullAircraftLoaded = true;
+  bodyAircraft[0].add(helperPivoteGBULRef[0]);
+  bodyAircraft[0].add(helperPivotGearFRef[0]);
+  bodyAircraft[0].add(helperPivotGearLRef[0]);
+  bodyAircraft[0].add(helperPivotGearRRef[0]);
+  bodyAircraft[0].add(helperPivoteGBURRef[0]);
+  bodyAircraft[0].add(sphereHelper[0]);
+  bodyAircraft[0].add(sphere);
+  body.rotateX(5 * DEGREES_TO_RADIANS);
+  pitchBackp += 5 * DEGREES_TO_RADIANS;
+  scene.add(body);
+}
+
+loadModel(fileName, bodyAircraft, loadAircraft)
+  .then(function() {
+    return loadModel(weaponR, threeObject, loadWithPivot, helperPivoteGBURRef);
+  })
+  .then(function() {
+    return loadModel(weaponL, GBUObjectL, loadWithPivot, helperPivoteGBULRef);
+  })
+  .then(function() {
+    return loadModel(propT, threeObject, loadPropeller);
+  })
+  .then(function() {
+    return loadModel(gearF, gearObject, loadWithPivot, helperPivotGearFRef);
+  })
+  .then(function() {
+    return loadModel(gearL, gearObjectR, loadWithPivot, helperPivotGearRRef);
+  })
+  .then(function() {
+    return loadModel(gearR, gearObjectL, loadWithPivot, helperPivotGearLRef);
+  })
+  .then(finishAircraftLoading);
 
 var sphereHelper = [pivotFactory()];
 
@@ -165,31 +163,7 @@ function onError()
   //console.log("Error");
 }
 
-// Update the thurs based on the speed. MAX thurst is 217. min thurs is 0.
-function updateThrust() {
-  commandedThrust = document.getElementById("throttle").value;
-
-  if (commandedThrust > currentThrust)
-  {
-    currentThrust = currentThrust + 0.015;
-  }
-
-  if (commandedThrust < currentThrust)
-  {
-    currentThrust = currentThrust - 0.015;
-  }
-
-  if(currentThrust < 0)
-  {
-    currentThrust = 0;
-  }
-
-  generalThrust = 0.0005 * currentThrust;
-
-  return generalThrust;
-}
-
-function updateBody() {
+function updateBody(generalThrust) {
 
   if (body.position != undefined)
   {
@@ -197,17 +171,15 @@ function updateBody() {
     weaponDirection = directionGlobal;
     directionGlobal = {x: directionGlobal.z * -1, y: directionGlobal.y, z: directionGlobal.x};
 
-    let generalThrust = updateThrust();
-
-    currentSpeed = Math.round(generalThrust * 43400) / 10;
+    currentSpeed = Math.round(generalThrust * 2170) / 10;
 
     let velocityMagnitudeXZ = Math.sqrt(
       testVelocity.x * testVelocity.x + testVelocity.z * testVelocity.z
     );
 
     document.getElementById("speedMeter").innerHTML = Math.round(velocityMagnitudeXZ * 60.0 * 60.0 / 1000.0 * 10.0) / 10.0 + "\n Km/h";
-    document.getElementById("rollRateNumber").innerHTML = Math.round(rollBackup * 1800.0 / 3.14159264) / 10;
-    document.getElementById("pitchRateNumber").innerHTML = Math.round(pitchBackp * 1800.0 / 3.14159264) / 10;
+    document.getElementById("rollRateNumber").innerHTML = Math.round(rollBackup * RADIANS_TO_DEGREES * 10) / 10;
+    document.getElementById("pitchRateNumber").innerHTML = Math.round(pitchBackp * RADIANS_TO_DEGREES * 10) / 10;
 
     controls.target.z = body.position.z;
     controls.target.x = body.position.x;
@@ -232,170 +204,6 @@ function updateBody() {
     body.rotateZ( realRoll );
     rollBackup += realRoll;
   }
-}
-
-function simulateFlightStep(
-  position,
-  velocity,
-  acceleration,
-  wingspan,
-  weight,
-  direction,
-  throttle,
-  deltaTime
-) {
-  const gravity = 9.81;         // m/s^2
-  const dragCoefficient = 0.06; // Simplified drag coefficient
-  const airDensity = 1.225;     // kg/m^3 at sea level
-  const maxThrust = 9120.59;   // N/m
-  const alpha_zero = 0.01;
-  const alpha_slope = 4.12; // This is bcs with 5 degrees give us 0.3 lifCoef
-  let liftCoefficient = 0.3;  // Simplified lift coefficient
-
-  let currentPitch = 0.0;
-
-  if(body != undefined)
-  {
-    currentPitch = body.rotation.x;
-    liftCoefficient = alpha_slope * (currentPitch - alpha_zero);
-    if(currentPitch > 17.0 /180.0 *3.141592 )
-    {
-      let clMaxStall = alpha_slope * (17.0 /180.0 *3.141592 - alpha_zero)
-      liftCoefficient = clMaxStall - 0.1 * (currentPitch - 17.0 /180.0 *3.141592) * (currentPitch - 17.0 /180.0 *3.141592) * 200;
-    }
-  }
-
-  // Calculate total velocity magnitude
-  velocityMagnitude = Math.sqrt(
-    velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z
-  );
-
-  velocityMagnitudeXZ = Math.sqrt(
-    velocity.x * velocity.x + velocity.z * velocity.z
-  );
-
-  if(velocityMagnitude == 0)
-  {
-    velocityMagnitude = 0.01;
-  }
-
-  if(velocityMagnitudeXZ == 0)
-  {
-    velocityMagnitudeXZ = 0.01;
-  }
-
-  // Calculate unit vector in velocity direction
-  const velocityUnit = {
-    x: velocity.x / velocityMagnitude,
-    y: velocity.y / velocityMagnitude,
-    z: velocity.z / velocityMagnitude
-  };
-
-  const velocityUnitXZ = {
-    x: velocity.x / velocityMagnitudeXZ,
-    z: velocity.z / velocityMagnitudeXZ,
-  };
-
-  // Calculate dynamic pressure
-  const dynamicPressure = 0.5 * airDensity * velocityMagnitudeXZ * velocityMagnitudeXZ;
-  // Calculate lift and drag forces
-  const lift = liftCoefficient * dynamicPressure * wingspan;
-  // Calculate drag force (opposite to velocity vector)
-  const dragMagnitude = dragCoefficient * dynamicPressure * wingspan;
-  // Computed thurst
-  const computeThurst = throttle * maxThrust;
-
-  const dynamicPressureYAxis = 0.5 * airDensity * velocity.y * velocity.y;
-  const dragMagnitudeYAxis = dragCoefficient * dynamicPressureYAxis * wingspan;
-
-  // Apply drag in all directions
-  acceleration.x = -(dragMagnitude * velocityUnitXZ.x) / weight;
-  acceleration.z = -(dragMagnitude * velocityUnitXZ.z) / weight;
-
-  acceleration.x += (computeThurst * direction.x) / weight;
-  acceleration.z += (computeThurst * direction.z) / weight;
-
-  // Update acceleration
-  acceleration.y = ((lift - weight * gravity) / weight) - ((velocity.y * dragMagnitudeYAxis) / weight) * 0.1;
-
-  if(position.y <= 1)
-  {
-    if(acceleration.y <= 1)
-    {
-      acceleration.y = 0;
-    }
-  }
-
-  let horizontalAcceleration = 0.0;
-
-  if(body != undefined)
-  {
-    // Calculate horizontal acceleration based on roll angle
-    horizontalAcceleration = Math.sin(rollBackup) * 1;
-  }
-
-  // Update acceleration vector
-  let accelerationRollX = Math.sin(-headingBackup) * horizontalAcceleration * 10.0;
-  let accelerationRollZ = Math.cos(-headingBackup) * horizontalAcceleration * 10.0;
-
-  acceleration.x += accelerationRollX ;
-  acceleration.z -= accelerationRollZ ;
-
-  // Update velocity
-  velocity.x += acceleration.x * deltaTime;
-  velocity.y += acceleration.y * deltaTime;
-  velocity.z += acceleration.z * deltaTime;
-
-  let theta = Math.atan2(-velocity.z, velocity.x);
-
-  if (theta > 0.0 && headingBackup < 0.0)
-  {
-    headingBackup = -headingBackup;
-  }
-
-  if(Math.abs(headingBackup - theta) > 0.01)
-  {
-    if(Math.abs(headingBackup - theta) > 0.05)
-    {
-      if(headingBackup < theta)
-      {
-        headingBackup += 0.005;
-        body.rotateY(0.005);
-      }
-      else
-      {
-        headingBackup -= 0.005;
-        body.rotateY(-0.005);
-      }
-    }
-    else
-    {
-      if(headingBackup < theta)
-      {
-        headingBackup += 0.001;
-        body.rotateY(0.001);
-      }
-      else
-      {
-        headingBackup -= 0.001;
-        body.rotateY(-0.001);
-      }
-    }
-  }
-
-  // Update position
-  position.x += velocity.x * deltaTime;
-  position.y += velocity.y * deltaTime;
-  position.z += velocity.z * deltaTime;
-
-  if(body.position != undefined)
-  {
-    body.position.x = position.z / 40;
-    body.position.y = position.y / 100;
-    body.position.z = - position.x / 40;
-  }
-
-  return { position, velocity, acceleration };
 }
 
 function explosionAnimation()
@@ -440,14 +248,15 @@ var render = function() {
       controls.update();
 
       if (!droneCrashed) {
+        var generalThrust = flightModel.updateThrust(document.getElementById("throttle").value);
 
-        var testSituation = simulateFlightStep(testPosition, testVelocity, testAcceleration, wingSpan, 3200, directionGlobal, 1, 1/30);
+        var testSituation = flightModel.simulateStep(testPosition, testVelocity, testAcceleration, wingSpan, 3200, directionGlobal, generalThrust, 1/30, body, rollBackup);
 
         testPosition = testSituation.position;
         testVelocity = testSituation.velocity;
         testAcceleration = testSituation.acceleration;
 
-        updateBody();
+        updateBody(generalThrust);
 
         landingGearUpdate(gearUP, gearObject[0], gearObjectR[0], gearObjectL[0]);
       }
