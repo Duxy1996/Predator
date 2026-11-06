@@ -8,8 +8,6 @@ heighValue = Math.random() * 40;
 
 // MAX weight 4760
 
-const wingSpan      = 20.1;
-
 terrainLoader = new Terrain(220.0, heighValue, 600.0, 600.0, 1500.0, 1500.0);
 
 let planeTerrain = terrainLoader.initTerrain()
@@ -98,7 +96,7 @@ let GBUObjectL   = [];
 // These are the initial values, this like the "Santo grial" og this simulation
 var testPosition     = {x: 0, y: 10, z: 0}
 var testVelocity     = {x: 80, y: 0, z: 0}
-var testAcceleration = {x: 0, y: 0, z: 0}
+// Tune the defaults here, for example: new FlightModel({ maxThrust: 11000, wingArea: 24 }).
 var flightModel      = new FlightModel();
 
 var gearUP       = true;
@@ -311,11 +309,7 @@ var render = function() {
       if (!droneCrashed) {
         var generalThrust = flightModel.updateThrust(document.getElementById("throttle").value);
 
-        var testSituation = flightModel.simulateStep(testPosition, testVelocity, testAcceleration, wingSpan, 3200, directionGlobal, generalThrust, 1/30, body, rollBackup);
-
-        testPosition = testSituation.position;
-        testVelocity = testSituation.velocity;
-        testAcceleration = testSituation.acceleration;
+        flightModel.simulateStep(testPosition, testVelocity, generalThrust, 1/30, body);
 
         updateBody(generalThrust);
 

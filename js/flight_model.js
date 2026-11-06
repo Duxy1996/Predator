@@ -1,142 +1,141 @@
 class FlightModel {
-  constructor() {
-    this.headingBackup = 0.0;
-    this.stallAngle = 17 * DEGREES_TO_RADIANS;
+  constructor(parameters = {}) {
+    // SI units: kg, m, s, N, m^2, and radians.
+    // Tune by passing overrides, for example: new FlightModel({ maxThrust: 11000 }).
+    // Mass and thrust set acceleration; wing area, lift, and drag set how it flies.
+    this.parameters = Object.assign({
+      mass: 3200, // Aircraft mass.
+      gravity: 9.81,
+      airDensity: 1.225,
+      wingArea: 25, // Reference wing area; controls lift and drag.
+      wingSpan: 20.1, // Used with wing area to estimate induced drag.
+      maxThrust: 9120.59, // Thrust at 100% throttle.
+      zeroLiftAngle: -2 * DEGREES_TO_RADIANS, // Angle of attack at zero lift.
+      liftSlope: 4.5, // Lift coefficient gained per radian below stall.
+      stallAngle: 15 * DEGREES_TO_RADIANS,
+      maxLiftCoefficient: 1.25,
+      zeroLiftDragCoefficient: 0.035,
+      oswaldEfficiency: 0.8
+    }, parameters);
+
+    // Aspect ratio and induced-drag factor stay fixed for this model instance.
+    this.aspectRatio = this.parameters.wingSpan * this.parameters.wingSpan
+      / this.parameters.wingArea;
+    this.inducedDragFactor = 1
+      / (Math.PI * this.aspectRatio * this.parameters.oswaldEfficiency);
+
+    // Reuse these vectors each frame instead of allocating new objects in the hot path.
+    this.threeForward = new THREE.Vector3();
+    this.threeUp = new THREE.Vector3();
+    this.acceleration = { x: 0, y: 0, z: 0 };
   }
 
   updateThrust(throttle) {
     return Math.max(0, Math.min(1, Number(throttle) / 100));
   }
 
-  simulateStep(
-    position,
-    velocity,
-    acceleration,
-    wingspan,
-    weight,
-    direction,
-    throttle,
-    deltaTime,
-    body,
-    rollBackup
-  ) {
-    const gravity = 9.81;
-    const dragCoefficient = 0.06;
-    const airDensity = 1.225;
-    const maxThrust = 9120.59;
-    const alpha_zero = 0.01;
-    const alpha_slope = 4.12;
-    let liftCoefficient = 0.3;
+  simulateStep(position, velocity, throttle, deltaTime, body) {
+    const parameters = this.parameters;
 
-    let currentPitch = 0.0;
+    // Convert the aircraft's local nose and top directions into simulation axes:
+    // +X is forward, +Y is up, and +Z is to the aircraft's right.
+    this.threeForward.set(0, 0, -1).applyQuaternion(body.quaternion);
+    this.threeUp.set(0, 1, 0).applyQuaternion(body.quaternion);
+    const forwardX = -this.threeForward.z;
+    const forwardY = this.threeForward.y;
+    const forwardZ = this.threeForward.x;
+    const upX = -this.threeUp.z;
+    const upY = this.threeUp.y;
+    const upZ = this.threeUp.x;
 
-    if (body != undefined) {
-      currentPitch = body.rotation.x;
-      liftCoefficient = alpha_slope * (currentPitch - alpha_zero);
-      if (currentPitch > this.stallAngle) {
-        let clMaxStall = alpha_slope * (this.stallAngle - alpha_zero);
-        liftCoefficient = clMaxStall - 0.1 * (currentPitch - this.stallAngle) * (currentPitch - this.stallAngle) * 200;
-      }
+    const speedSquared = velocity.x * velocity.x
+      + velocity.y * velocity.y
+      + velocity.z * velocity.z;
+    const speed = Math.sqrt(speedSquared);
+    const horizontalSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+
+    // Lift responds to angle of attack (nose pitch minus the flight-path angle).
+    const aircraftPitch = Math.atan2(forwardY, Math.sqrt(forwardX * forwardX + forwardZ * forwardZ));
+    const flightPathAngle = Math.atan2(velocity.y, horizontalSpeed);
+    const angleOfAttack = aircraftPitch - flightPathAngle;
+    let liftCoefficient = parameters.liftSlope
+      * (angleOfAttack - parameters.zeroLiftAngle);
+    const absoluteAngleOfAttack = Math.abs(angleOfAttack);
+
+    if (absoluteAngleOfAttack > parameters.stallAngle) {
+      // Beyond the stall angle, lift falls off instead of growing without limit.
+      liftCoefficient = Math.sign(liftCoefficient)
+        * parameters.maxLiftCoefficient
+        * parameters.stallAngle
+        / absoluteAngleOfAttack;
+    } else {
+      liftCoefficient = Math.max(
+        -parameters.maxLiftCoefficient,
+        Math.min(parameters.maxLiftCoefficient, liftCoefficient)
+      );
     }
 
-    let velocityMagnitude = Math.sqrt(
-      velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z
-    );
-    let velocityMagnitudeXZ = Math.sqrt(
-      velocity.x * velocity.x + velocity.z * velocity.z
-    );
+    const dynamicPressure = 0.5 * parameters.airDensity * speedSquared;
+    const liftMagnitude = dynamicPressure * parameters.wingArea * liftCoefficient;
+    const dragCoefficient = parameters.zeroLiftDragCoefficient
+      + liftCoefficient * liftCoefficient * this.inducedDragFactor;
+    const dragMagnitude = dynamicPressure * parameters.wingArea * dragCoefficient;
+    const thrustMagnitude = throttle * parameters.maxThrust;
 
-    if (velocityMagnitude == 0) {
-      velocityMagnitude = 0.01;
+    // Lift is perpendicular to the airflow and follows the aircraft's bank.
+    const velocityUnitX = speed > 0 ? velocity.x / speed : 0;
+    const velocityUnitY = speed > 0 ? velocity.y / speed : 0;
+    const velocityUnitZ = speed > 0 ? velocity.z / speed : 0;
+    const upAlongVelocity = upX * velocityUnitX
+      + upY * velocityUnitY
+      + upZ * velocityUnitZ;
+    let liftX = upX - upAlongVelocity * velocityUnitX;
+    let liftY = upY - upAlongVelocity * velocityUnitY;
+    let liftZ = upZ - upAlongVelocity * velocityUnitZ;
+    const liftDirectionLength = Math.sqrt(liftX * liftX + liftY * liftY + liftZ * liftZ);
+
+    if (liftDirectionLength > 0) {
+      liftX /= liftDirectionLength;
+      liftY /= liftDirectionLength;
+      liftZ /= liftDirectionLength;
     }
 
-    if (velocityMagnitudeXZ == 0) {
-      velocityMagnitudeXZ = 0.01;
-    }
+    // Apply thrust, lift, drag, and gravity, then integrate velocity and position.
+    const inverseMass = 1 / parameters.mass;
+    const acceleration = this.acceleration;
+    acceleration.x = (thrustMagnitude * forwardX
+      + liftMagnitude * liftX
+      - dragMagnitude * velocityUnitX) * inverseMass;
+    acceleration.y = (thrustMagnitude * forwardY
+      + liftMagnitude * liftY
+      - dragMagnitude * velocityUnitY) * inverseMass
+      - parameters.gravity;
+    acceleration.z = (thrustMagnitude * forwardZ
+      + liftMagnitude * liftZ
+      - dragMagnitude * velocityUnitZ) * inverseMass;
 
-    const velocityUnit = {
-      x: velocity.x / velocityMagnitude,
-      y: velocity.y / velocityMagnitude,
-      z: velocity.z / velocityMagnitude
-    };
-    const velocityUnitXZ = {
-      x: velocity.x / velocityMagnitudeXZ,
-      z: velocity.z / velocityMagnitudeXZ,
-    };
-
-    const dynamicPressure = 0.5 * airDensity * velocityMagnitudeXZ * velocityMagnitudeXZ;
-    const lift = liftCoefficient * dynamicPressure * wingspan;
-    const dragMagnitude = dragCoefficient * dynamicPressure * wingspan;
-    const computeThurst = throttle * maxThrust;
-
-    const dynamicPressureYAxis = 0.5 * airDensity * velocity.y * velocity.y;
-    const dragMagnitudeYAxis = dragCoefficient * dynamicPressureYAxis * wingspan;
-
-    acceleration.x = -(dragMagnitude * velocityUnitXZ.x) / weight;
-    acceleration.z = -(dragMagnitude * velocityUnitXZ.z) / weight;
-
-    acceleration.x += (computeThurst * direction.x) / weight;
-    acceleration.z += (computeThurst * direction.z) / weight;
-    acceleration.y = ((lift - weight * gravity) / weight) - ((velocity.y * dragMagnitudeYAxis) / weight) * 0.1;
-
-    if (position.y <= 1) {
-      if (acceleration.y <= 1) {
-        acceleration.y = 0;
-      }
-    }
-
-    let horizontalAcceleration = 0.0;
-
-    if (body != undefined) {
-      horizontalAcceleration = Math.sin(rollBackup) * 1;
-    }
-
-    const accelerationRollX = Math.sin(-this.headingBackup) * horizontalAcceleration * 10.0;
-    const accelerationRollZ = Math.cos(-this.headingBackup) * horizontalAcceleration * 10.0;
-
-    acceleration.x += accelerationRollX;
-    acceleration.z -= accelerationRollZ;
-
+    // Semi-implicit Euler is stable for the simulation's small fixed time step.
     velocity.x += acceleration.x * deltaTime;
     velocity.y += acceleration.y * deltaTime;
     velocity.z += acceleration.z * deltaTime;
-
-    const theta = Math.atan2(-velocity.z, velocity.x);
-
-    if (theta > 0.0 && this.headingBackup < 0.0) {
-      this.headingBackup = -this.headingBackup;
-    }
-
-    if (Math.abs(this.headingBackup - theta) > 0.01) {
-      if (Math.abs(this.headingBackup - theta) > 0.05) {
-        if (this.headingBackup < theta) {
-          this.headingBackup += 0.005;
-          body.rotateY(0.005);
-        } else {
-          this.headingBackup -= 0.005;
-          body.rotateY(-0.005);
-        }
-      } else {
-        if (this.headingBackup < theta) {
-          this.headingBackup += 0.001;
-          body.rotateY(0.001);
-        } else {
-          this.headingBackup -= 0.001;
-          body.rotateY(-0.001);
-        }
-      }
-    }
 
     position.x += velocity.x * deltaTime;
     position.y += velocity.y * deltaTime;
     position.z += velocity.z * deltaTime;
 
-    if (body.position != undefined) {
-      body.position.x = position.z / 40;
-      body.position.y = position.y / 100;
-      body.position.z = -position.x / 40;
+    // Turn the nose with the actual horizontal change in flight direction.
+    const horizontalSpeedSquared = velocity.x * velocity.x + velocity.z * velocity.z;
+    if (horizontalSpeedSquared > 0) {
+      const turnRate = (velocity.z * acceleration.x - velocity.x * acceleration.z)
+        / horizontalSpeedSquared;
+      body.rotateY(turnRate * deltaTime);
     }
 
-    return { position, velocity, acceleration };
+    // Keep the existing Three.js-to-simulation scale used by the rest of the app.
+    body.position.x = position.z / 40;
+    body.position.y = position.y / 100;
+    body.position.z = -position.x / 40;
+
+    return acceleration;
   }
 }
