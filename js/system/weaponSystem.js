@@ -1,87 +1,87 @@
 
-let releasedGBULCheck = false;
-let releasedGBURCheck = false;
-let releasedGBUL;
-let releasedGBUR;
+let isLeftBombReleased = false;
+let isRightBombReleased = false;
+let leftBomb;
+let rightBomb;
 
-function launchGBU() {
-  if (!releasedGBUL) {
-    releasedGBULCheck = true;
-    releasedGBUL = helperPivoteGBULRef[0].children[0];
+function launchBomb() {
+  if (!leftBomb) {
+    isLeftBombReleased = true;
+    leftBomb = leftBombPivots[0].children[0];
 
-    // the releaseGBUL position is copied in position variable
+    // Store the bomb's world position before detaching it from the pivot.
     let position = new THREE.Vector3();
-    releasedGBUL.getWorldPosition(position);
+    leftBomb.getWorldPosition(position);
 
-    helperPivoteGBULRef[0].remove(releasedGBUL);
+    leftBombPivots[0].remove(leftBomb);
 
     // replace the position on the pivot by the real world position
-    releasedGBUL.position.x = position.x;
-    releasedGBUL.position.y = position.y;
-    releasedGBUL.position.z = position.z;
+    leftBomb.position.x = position.x;
+    leftBomb.position.y = position.y;
+    leftBomb.position.z = position.z;
 
     // add the rotation of the aircraft to the weapon
-    releasedGBUL.rotation.x = body.rotation.x;
-    releasedGBUL.rotation.y = body.rotation.y;
-    releasedGBUL.rotation.z = body.rotation.z;
+    leftBomb.rotation.x = aircraftObject.rotation.x;
+    leftBomb.rotation.y = aircraftObject.rotation.y;
+    leftBomb.rotation.z = aircraftObject.rotation.z;
 
-    releasedGBUL.scale.x = 10;
-    releasedGBUL.scale.y = 10;
-    releasedGBUL.scale.z = 10;
+    leftBomb.scale.x = 10;
+    leftBomb.scale.y = 10;
+    leftBomb.scale.z = 10;
 
-    parts.push(new DirectionalExplosion(position.x, position.y, position.z, weaponDirection));
+    explosionParts.push(new DirectionalExplosion(position.x, position.y, position.z, weaponDirection));
 
-    scene.add(releasedGBUL);
+    scene.add(leftBomb);
     return;
   }
 
-  if(!releasedGBUR)
+  if(!rightBomb)
     {
-      releasedGBURCheck = true;
-      releasedGBUR = helperPivoteGBURRef[0].children[0];
+      isRightBombReleased = true;
+      rightBomb = rightBombPivots[0].children[0];
 
-      // the releaseGBUL position is copied in position variable
+      // Store the bomb's world position before detaching it from the pivot.
       let position = new THREE.Vector3();
-      releasedGBUR.getWorldPosition(position);
+      rightBomb.getWorldPosition(position);
 
-      helperPivoteGBURRef[0].remove(releasedGBUR);
+      rightBombPivots[0].remove(rightBomb);
 
       // replace the position on the pivot by the real world position
-      releasedGBUR.position.x = position.x;
-      releasedGBUR.position.y = position.y;
-      releasedGBUR.position.z = position.z;
+      rightBomb.position.x = position.x;
+      rightBomb.position.y = position.y;
+      rightBomb.position.z = position.z;
 
       // add the rotation of the aircraft to the weapon
-      releasedGBUR.rotation.x = body.rotation.x;
-      releasedGBUR.rotation.y = body.rotation.y;
-      releasedGBUR.rotation.z = body.rotation.z;
+      rightBomb.rotation.x = aircraftObject.rotation.x;
+      rightBomb.rotation.y = aircraftObject.rotation.y;
+      rightBomb.rotation.z = aircraftObject.rotation.z;
 
-      releasedGBUR.scale.x = 10;
-      releasedGBUR.scale.y = 10;
-      releasedGBUR.scale.z = 10;
+      rightBomb.scale.x = 10;
+      rightBomb.scale.y = 10;
+      rightBomb.scale.z = 10;
 
-      parts.push(new DirectionalExplosion(position.x, position.y, position.z, weaponDirection));
+      explosionParts.push(new DirectionalExplosion(position.x, position.y, position.z, weaponDirection));
 
-      scene.add(releasedGBUR);
+      scene.add(rightBomb);
       return;
     }
 }
 
 function updateWeaponSystem()
 {
-  if (releasedGBULCheck) {
-    if (releasedGBUL != undefined) {
-      releasedGBUL.position.z += 0.23 * weaponDirection.z;
-      releasedGBUL.position.y += 0.23 * weaponDirection.y;
-      releasedGBUL.position.x += 0.23 * weaponDirection.x;
+  if (isLeftBombReleased) {
+    if (leftBomb != undefined) {
+      leftBomb.position.z += 0.23 * weaponDirection.z;
+      leftBomb.position.y += 0.23 * weaponDirection.y;
+      leftBomb.position.x += 0.23 * weaponDirection.x;
     }
   }
 
-  if (releasedGBURCheck) {
-    if (releasedGBUR != undefined) {
-      releasedGBUR.position.z += 0.23 * weaponDirection.z;
-      releasedGBUR.position.y += 0.23 * weaponDirection.y;
-      releasedGBUR.position.x += 0.23 * weaponDirection.x;
+  if (isRightBombReleased) {
+    if (rightBomb != undefined) {
+      rightBomb.position.z += 0.23 * weaponDirection.z;
+      rightBomb.position.y += 0.23 * weaponDirection.y;
+      rightBomb.position.x += 0.23 * weaponDirection.x;
     }
   }
 }

@@ -10,9 +10,9 @@ class FlightModel {
       wingArea: 25, // Reference wing area; controls lift and drag.
       wingSpan: 20.1, // Used with wing area to estimate induced drag.
       maxThrust: 9120.59, // Thrust at 100% throttle.
-      zeroLiftAngle: -2 * DEGREES_TO_RADIANS, // Angle of attack at zero lift.
+      zeroLiftAngle: -2 * degreesToRadians, // Angle of attack at zero lift.
       liftSlope: 4.5, // Lift coefficient gained per radian below stall.
-      stallAngle: 15 * DEGREES_TO_RADIANS,
+      stallAngle: 15 * degreesToRadians,
       maxLiftCoefficient: 1.25,
       zeroLiftDragCoefficient: 0.035,
       oswaldEfficiency: 0.8

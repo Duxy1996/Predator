@@ -56,8 +56,8 @@ function frontGearUpdateUp(frontGear) {
   }
 }
 
-function landingGearUpdate(gearUPTmp, frontGear, rightGear, leftGear) {
-  if(gearUPTmp) {
+function landingGearUpdate(isLandingGearUp, frontGear, rightGear, leftGear) {
+  if(isLandingGearUp) {
     leftGearUpdateUp(leftGear);
     frontGearUpdateUp(frontGear);
     rightGearUpdateUp(rightGear);

@@ -1,16 +1,18 @@
 
 let scene        = new THREE.Scene();
-let ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
+let ambientLight = new THREE.AmbientLight( 0xffffff, 0.55 );
+let sunlight = new THREE.DirectionalLight( 0xffffff, 0.85 );
 
-heighValue = Math.random() * 40;
+terrainHeight = 32 + Math.random() * 8;
 
 // MQ-9 Reaper of the U.S. Air Force.
 
 // MAX weight 4760
 
-terrainLoader = new Terrain(220.0, heighValue, 600.0, 600.0, 1500.0, 1500.0);
+terrain = new Terrain(220.0, terrainHeight, 600.0, 600.0, 1500.0, 1500.0);
 
-let planeTerrain = terrainLoader.initTerrain()
+let terrainMesh = terrain.initTerrain()
+sunlight.position.set(-180, 260, 120);
 
 let camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
 let cameraDrone = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
@@ -18,12 +20,14 @@ let cameraDrone = new THREE.PerspectiveCamera( 45, window.innerWidth / window.in
 cameraDrone.position.z = -1;
 camera.position.z = 4;
 
-var directionGlobal = {x: 1, y:0, z:0};
+var aircraftDirection = {x: 1, y:0, z:0};
 var weaponDirection = {x: 1, y:0, z:0};
 
 camera.add( listener );
-scene.add( planeTerrain );
+scene.add( terrainMesh );
 scene.add( ambientLight );
+scene.add( sunlight );
+scene.fog = new THREE.Fog(0x9bb8c9, 250, 1200);
 
 document.getElementById("throttle").value = 50;
 
@@ -33,42 +37,42 @@ var controls  = new THREE.OrbitControls( camera, renderer.domElement );
 // Limit camera interaction to 30 m to keep the horizon out of view.
 controls.maxDistance = 30;
 
-let pauseSimulation = true;
-let droneCrashed    = false;
+let isSimulationPaused = true;
+let hasAircraftCrashed    = false;
 
-var holdHeading = false;
+var isHeadingHeld = false;
 
-renderer.setClearColor("#5566FF");
+renderer.setClearColor("#9bb8c9");
 
 renderer.setSize( window.innerWidth, window.innerHeight );
 
 document.body.appendChild( renderer.domElement );
 
-var fullAircraftLoaded = false;
+var isAircraftFullyLoaded = false;
 
 
-var parts = [];
+var explosionParts = [];
 
-var isPropeller;
+var isPropellerLoaded;
 
-var realHeading      = 0.0;
-var realPitch        = 0.0;
-var pitchBackp       = 0.0;
-var realRoll         = 0.0;
-var rollBackup       = 0.0;
-var headingCommanded = 0.0;
+var currentHeading      = 0.0;
+var pitchInput        = 0.0;
+var accumulatedPitch       = 0.0;
+var rollInput         = 0.0;
+var accumulatedRoll       = 0.0;
+var commandedHeading = 0.0;
 
 var path      = './objects/MQ-9-Predator/';
 
-var weaponR   = 'Right-GBU';
-var weaponL   = 'Left-GBU';
-var propT     = 'Back-Prop';
-var gearF     = 'Front-wheel';
-var gearL     = 'Left-wheel';
-var gearR     = 'Right-wheel';
-var aircraftScale = 10;
-var aircraftSelectionStarted = false;
-var aircraftModels = {
+var rightBombModelName   = 'Right-GBU';
+var leftBombModelName   = 'Left-GBU';
+var propellerModelName     = 'Back-Prop';
+var frontWheelModelName     = 'Front-wheel';
+var leftWheelModelName     = 'Left-wheel';
+var rightWheelModelName     = 'Right-wheel';
+var aircraftObjectScale = 10;
+var isAircraftSelectionStarted = false;
+var aircraftOptions = {
   predator: {
     label: 'Predator MQ-9',
     path: './objects/MQ-9-Predator/',
@@ -85,38 +89,38 @@ var aircraftModels = {
   }
 };
 
-var body         = [];
-var threeObject  = [];
-var bodyAircraft = [];
-var gearObject   = [];
-var gearObjectR  = [];
-var gearObjectL  = [];
-let GBUObjectL   = [];
+var aircraftObject         = [];
+var accessoryPivots  = [];
+var loadedAircraftObjects = [];
+var frontWheelObjects   = [];
+var leftWheelObjects  = [];
+var rightWheelObjects  = [];
+let leftBombObjects   = [];
 
 // Initial flight state for the simulation.
-var testPosition     = {x: 0, y: 10, z: 0}
-var testVelocity     = {x: 80, y: 0, z: 0}
+var aircraftPosition     = {x: 0, y: 10, z: 0}
+var aircraftVelocity     = {x: 80, y: 0, z: 0}
 // Tune the defaults here, for example: new FlightModel({ maxThrust: 11000, wingArea: 24 }).
 var flightModel      = new FlightModel();
 
-var gearUP       = true;
+var isLandingGearUp       = true;
 
 var timesAp = 1;
 
-var helperPivoteGBUL = pivotFactory(0, 0, 0);
-var helperPivoteGBULRef = [helperPivoteGBUL];
+var leftBombPivot = pivotFactory(0, 0, 0);
+var leftBombPivots = [leftBombPivot];
 
-var helperPivoteGBUR = pivotFactory(0, 0, 0);
-var helperPivoteGBURRef = [helperPivoteGBUR];
+var rightBombPivot = pivotFactory(0, 0, 0);
+var rightBombPivots = [rightBombPivot];
 
-var helperPivotGearF = pivotFactory(0.0043, -0.01, -0.035);
-var helperPivotGearFRef = [helperPivotGearF];
+var frontWheelPivot = pivotFactory(0.0043, -0.01, -0.035);
+var frontWheelPivots = [frontWheelPivot];
 
-var helperPivotGearR = pivotFactory(0, -0.002, 0.020);
-var helperPivotGearRRef = [helperPivotGearR];
+var leftWheelPivot = pivotFactory(0, -0.002, 0.020);
+var leftWheelPivots = [leftWheelPivot];
 
-var helperPivotGearL = pivotFactory(0.01, -0.002, 0.020);
-var helperPivotGearLRef = [helperPivotGearL];
+var rightWheelPivot = pivotFactory(0.01, -0.002, 0.020);
+var rightWheelPivots = [rightWheelPivot];
 
 function loadModel(file, objects, callback, pivot, modelPath) {
   return new Promise(function(resolve, reject) {
@@ -137,25 +141,25 @@ function loadModel(file, objects, callback, pivot, modelPath) {
 }
 
 function loadSelectedAircraft(aircraft) {
-  aircraftScale = aircraft.scale;
+  aircraftObjectScale = aircraft.scale;
 
   if (aircraft.hasMaterials) {
-    return loadModel(aircraft.file, bodyAircraft, loadAircraft, undefined, aircraft.path);
+    return loadModel(aircraft.file, loadedAircraftObjects, loadAircraft, undefined, aircraft.path);
   }
 
-  return loadObjModel(aircraft.path, aircraft.file, undefined, bodyAircraft, loadAircraft);
+  return loadObjModel(aircraft.path, aircraft.file, undefined, loadedAircraftObjects, loadAircraft);
 }
 
 function startSimulation(modelName) {
-  if (aircraftSelectionStarted || !Object.prototype.hasOwnProperty.call(aircraftModels, modelName)) {
+  if (isAircraftSelectionStarted || !Object.prototype.hasOwnProperty.call(aircraftOptions, modelName)) {
     return;
   }
 
-  aircraftSelectionStarted = true;
+  isAircraftSelectionStarted = true;
   var selector = document.getElementById("model-selector");
   var status = document.getElementById("model-selector-status");
   var buttons = selector.querySelectorAll("button");
-  var aircraft = aircraftModels[modelName];
+  var aircraft = aircraftOptions[modelName];
 
   buttons.forEach(function(button) {
     button.disabled = true;
@@ -165,12 +169,12 @@ function startSimulation(modelName) {
   loadSelectedAircraft(aircraft)
     .then(function() {
       return Promise.all([
-        loadModel(weaponR, threeObject, loadWithPivot, helperPivoteGBURRef),
-        loadModel(weaponL, GBUObjectL, loadWithPivot, helperPivoteGBULRef),
-        loadModel(propT, threeObject, loadPropeller),
-        loadModel(gearF, gearObject, loadWithPivot, helperPivotGearFRef),
-        loadModel(gearL, gearObjectR, loadWithPivot, helperPivotGearRRef),
-        loadModel(gearR, gearObjectL, loadWithPivot, helperPivotGearLRef)
+        loadModel(rightBombModelName, accessoryPivots, loadWithPivot, rightBombPivots),
+        loadModel(leftBombModelName, leftBombObjects, loadWithPivot, leftBombPivots),
+        loadModel(propellerModelName, accessoryPivots, loadPropeller),
+        loadModel(frontWheelModelName, frontWheelObjects, loadWithPivot, frontWheelPivots),
+        loadModel(leftWheelModelName, leftWheelObjects, loadWithPivot, leftWheelPivots),
+        loadModel(rightWheelModelName, rightWheelObjects, loadWithPivot, rightWheelPivots)
       ]);
     })
     .then(finishAircraftLoading)
@@ -178,7 +182,7 @@ function startSimulation(modelName) {
       status.textContent = "";
       selector.hidden = true;
       setTimeout(function() {
-        pauseSimulation = false;
+        isSimulationPaused = false;
       }, 4000);
     })
     .catch(function(error) {
@@ -187,30 +191,30 @@ function startSimulation(modelName) {
       buttons.forEach(function(button) {
         button.disabled = false;
       });
-      aircraftSelectionStarted = false;
+      isAircraftSelectionStarted = false;
     });
 }
 
 function finishAircraftLoading() {
-  if (terrainLoader.getTerrainElevation(testPosition)) {
+  if (terrain.getTerrainElevation(aircraftPosition)) {
     console.log("DEP");
     window.location.reload();
   }
 
-  fullAircraftLoaded = true;
-  bodyAircraft[0].add(helperPivoteGBULRef[0]);
-  bodyAircraft[0].add(helperPivotGearFRef[0]);
-  bodyAircraft[0].add(helperPivotGearLRef[0]);
-  bodyAircraft[0].add(helperPivotGearRRef[0]);
-  bodyAircraft[0].add(helperPivoteGBURRef[0]);
-  bodyAircraft[0].add(sphereHelper[0]);
-  bodyAircraft[0].add(sphere);
-  body.rotateX(5 * DEGREES_TO_RADIANS);
-  pitchBackp += 5 * DEGREES_TO_RADIANS;
-  scene.add(body);
+  isAircraftFullyLoaded = true;
+  loadedAircraftObjects[0].add(leftBombPivots[0]);
+  loadedAircraftObjects[0].add(frontWheelPivots[0]);
+  loadedAircraftObjects[0].add(rightWheelPivots[0]);
+  loadedAircraftObjects[0].add(leftWheelPivots[0]);
+  loadedAircraftObjects[0].add(rightBombPivots[0]);
+  loadedAircraftObjects[0].add(propellerAssemblyPivot[0]);
+  loadedAircraftObjects[0].add(sphere);
+  aircraftObject.rotateX(5 * degreesToRadians);
+  accumulatedPitch += 5 * degreesToRadians;
+  scene.add(aircraftObject);
 }
 
-var sphereHelper = [pivotFactory()];
+var propellerAssemblyPivot = [pivotFactory()];
 
 function onLoad()
 {
@@ -224,66 +228,66 @@ function onError()
 
 function updateBody(generalThrust) {
 
-  if (body.position != undefined)
+  if (aircraftObject.position != undefined)
   {
-    directionGlobal = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( body.quaternion );
-    weaponDirection = directionGlobal;
-    directionGlobal = {x: directionGlobal.z * -1, y: directionGlobal.y, z: directionGlobal.x};
+    aircraftDirection = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( aircraftObject.quaternion );
+    weaponDirection = aircraftDirection;
+    aircraftDirection = {x: aircraftDirection.z * -1, y: aircraftDirection.y, z: aircraftDirection.x};
 
     currentSpeed = Math.round(generalThrust * 2170) / 10;
 
     let velocityMagnitudeXZ = Math.sqrt(
-      testVelocity.x * testVelocity.x + testVelocity.z * testVelocity.z
+      aircraftVelocity.x * aircraftVelocity.x + aircraftVelocity.z * aircraftVelocity.z
     );
 
     document.getElementById("speedMeter").innerHTML = Math.round(velocityMagnitudeXZ * 60.0 * 60.0 / 1000.0 * 10.0) / 10.0 + "\n Km/h";
 
-    controls.target.z = body.position.z;
-    controls.target.x = body.position.x;
-    controls.target.y = body.position.y;
+    controls.target.z = aircraftObject.position.z;
+    controls.target.x = aircraftObject.position.x;
+    controls.target.y = aircraftObject.position.y;
   }
 
-  if(isPropeller)
+  if(isPropellerLoaded)
   {
-    sphereHelper[0].rotation.z -= 0.42;
+    propellerAssemblyPivot[0].rotation.z -= 0.42;
   }
 
-  if (bodyAircraft.length > 0)
+  if (loadedAircraftObjects.length > 0)
   {
-    if (terrainLoader.getTerrainElevation(bodyAircraft[0].position)) {
-      parts.push(new ExplodeAnimation(bodyAircraft[0].position.x, bodyAircraft[0].position.y, bodyAircraft[0].position.z));
-      droneCrashed = true;
+    if (terrain.getTerrainElevation(loadedAircraftObjects[0].position)) {
+      explosionParts.push(new ExplodeAnimation(loadedAircraftObjects[0].position.x, loadedAircraftObjects[0].position.y, loadedAircraftObjects[0].position.z));
+      hasAircraftCrashed = true;
       sound.stop();
     }
 
-    body.rotateX( realPitch );
-    pitchBackp += realPitch;
-    body.rotateZ( realRoll );
-    rollBackup += realRoll;
+    aircraftObject.rotateX( pitchInput );
+    accumulatedPitch += pitchInput;
+    aircraftObject.rotateZ( rollInput );
+    accumulatedRoll += rollInput;
   }
 }
 
 function explosionAnimation()
 {
-  if (!droneCrashed) {
-    if (bodyAircraft.length > 0) {
-      if (terrainLoader.getTerrainElevation(bodyAircraft[0].position)) {
-        parts.push(new ExplodeAnimation(bodyAircraft[0].position.x, bodyAircraft[0].position.y, bodyAircraft[0].position.z));
-        droneCrashed = true;
+  if (!hasAircraftCrashed) {
+    if (loadedAircraftObjects.length > 0) {
+      if (terrain.getTerrainElevation(loadedAircraftObjects[0].position)) {
+        explosionParts.push(new ExplodeAnimation(loadedAircraftObjects[0].position.x, loadedAircraftObjects[0].position.y, loadedAircraftObjects[0].position.z));
+        hasAircraftCrashed = true;
         sound.stop();
       }
     }
   }
 
-  var pCount = parts.length;
+  var pCount = explosionParts.length;
   while(pCount--) {
-    if(parts[pCount].iterations < 500)
+    if(explosionParts[pCount].iterations < 500)
       {
-        parts[pCount].update();
+        explosionParts[pCount].update();
       }
-    if(parts[pCount].iterations == 500)
+    if(explosionParts[pCount].iterations == 500)
       {
-        parts[pCount].endInteraction();
+        explosionParts[pCount].endInteraction();
       }
   }
 }
@@ -294,9 +298,9 @@ var render = function() {
     requestAnimationFrame( render );
   }, 1000 / 30 );
 
-  if (fullAircraftLoaded)
+  if (isAircraftFullyLoaded)
   {
-    if (!pauseSimulation)
+    if (!isSimulationPaused)
     {
       explosionAnimation()
 
@@ -304,14 +308,14 @@ var render = function() {
 
       controls.update();
 
-      if (!droneCrashed) {
+      if (!hasAircraftCrashed) {
         var generalThrust = flightModel.updateThrust(document.getElementById("throttle").value);
 
-        flightModel.simulateStep(testPosition, testVelocity, generalThrust, 1/30, body);
+        flightModel.simulateStep(aircraftPosition, aircraftVelocity, generalThrust, 1/30, aircraftObject);
 
         updateBody(generalThrust);
 
-        landingGearUpdate(gearUP, gearObject[0], gearObjectR[0], gearObjectL[0]);
+        landingGearUpdate(isLandingGearUp, frontWheelObjects[0], leftWheelObjects[0], rightWheelObjects[0]);
       }
     }
   }
@@ -330,13 +334,13 @@ function onWindowResize()
   renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
-function loadWithPivot(object, threeObject, pivot)
+function loadWithPivot(object, accessoryPivots, pivot)
 {
   object.position.z = -pivot[0].position.z;
   object.position.x = -pivot[0].position.x;
   object.position.y = -pivot[0].position.y;
 
-  threeObject.push(pivot[0]);
+  accessoryPivots.push(pivot[0]);
 
   pivot[0].add(object);
 }
@@ -365,29 +369,29 @@ function loadObjModel(path, url, material, objects, callback, pivot) {
 
 function loadAircraft(object, objects)
 {
-  body = object;
-  body.position.z = 0;
-  body.position.x = 0;
-  body.position.y = 0;
-  body.scale.set(aircraftScale, aircraftScale, aircraftScale);
-  body.add(cameraDrone);
-  objects.push(body);
+  aircraftObject = object;
+  aircraftObject.position.z = 0;
+  aircraftObject.position.x = 0;
+  aircraftObject.position.y = 0;
+  aircraftObject.scale.set(aircraftObjectScale, aircraftObjectScale, aircraftObjectScale);
+  aircraftObject.add(cameraDrone);
+  objects.push(aircraftObject);
 }
 
-function loadPropeller(object, threeObject)
+function loadPropeller(object, accessoryPivots)
 {
-  isPropeller = true;
+  isPropellerLoaded = true;
   object.position.z = 0;
   object.position.x = -0.0043;
   object.position.y = 0.0015;
-  sphereHelper[0].position.x = 0.004
-  sphereHelper[0].add(object)
-  scene.add(sphereHelper[0])
+  propellerAssemblyPivot[0].position.x = 0.004
+  propellerAssemblyPivot[0].add(object)
+  scene.add(propellerAssemblyPivot[0])
 }
 
 function gearChange()
 {
-  gearUP = !gearUP;
+  isLandingGearUp = !isLandingGearUp;
   gearsound.play();
 }
 
@@ -406,8 +410,8 @@ function setupFlightJoystick() {
   function centerJoystick() {
     stick.style.left = "50%";
     stick.style.top = "50%";
-    realPitch = 0;
-    realRoll = 0;
+    pitchInput = 0;
+    rollInput = 0;
   }
 
   function moveJoystick(event) {
@@ -428,8 +432,8 @@ function setupFlightJoystick() {
 
     stick.style.left = "calc(50% + " + normalizedX * maxOffsetX + "px)";
     stick.style.top = "calc(50% + " + normalizedY * maxOffsetY + "px)";
-    realRoll = -normalizedX * 0.01;
-    realPitch = normalizedY * 0.01;
+    rollInput = -normalizedX * 0.01;
+    pitchInput = normalizedY * 0.01;
   }
 
   joystick.addEventListener("pointerdown", function(event) {
@@ -465,11 +469,11 @@ function setupFlightJoystick() {
 
 function heading()
 {
-  holdHeading = !holdHeading
-  if (!holdHeading)
+  isHeadingHeld = !isHeadingHeld
+  if (!isHeadingHeld)
   {
-    realRoll = 0;
-    realPitch = 0;
+    rollInput = 0;
+    pitchInput = 0;
   }
 }
 
