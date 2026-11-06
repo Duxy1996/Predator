@@ -196,11 +196,6 @@ function startSimulation(modelName) {
 }
 
 function finishAircraftLoading() {
-  if (terrain.getTerrainElevation(aircraftPosition)) {
-    console.log("DEP");
-    window.location.reload();
-  }
-
   isAircraftFullyLoaded = true;
   loadedAircraftObjects[0].add(leftBombPivots[0]);
   loadedAircraftObjects[0].add(frontWheelPivots[0]);
@@ -255,9 +250,7 @@ function updateBody(generalThrust) {
   if (loadedAircraftObjects.length > 0)
   {
     if (terrain.getTerrainElevation(loadedAircraftObjects[0].position)) {
-      explosionParts.push(new ExplodeAnimation(loadedAircraftObjects[0].position.x, loadedAircraftObjects[0].position.y, loadedAircraftObjects[0].position.z));
-      hasAircraftCrashed = true;
-      sound.stop();
+      triggerAircraftCrash();
     }
 
     aircraftObject.rotateX( pitchInput );
@@ -269,27 +262,33 @@ function updateBody(generalThrust) {
 
 function explosionAnimation()
 {
-  if (!hasAircraftCrashed) {
-    if (loadedAircraftObjects.length > 0) {
-      if (terrain.getTerrainElevation(loadedAircraftObjects[0].position)) {
-        explosionParts.push(new ExplodeAnimation(loadedAircraftObjects[0].position.x, loadedAircraftObjects[0].position.y, loadedAircraftObjects[0].position.z));
-        hasAircraftCrashed = true;
-        sound.stop();
-      }
+  for (let i = explosionParts.length - 1; i >= 0; i--) {
+    const explosion = explosionParts[i];
+
+    if (explosion.iterations >= explosion.lifetime) {
+      explosion.endInteraction();
+      explosionParts.splice(i, 1);
+    } else {
+      explosion.update();
     }
   }
+}
 
-  var pCount = explosionParts.length;
-  while(pCount--) {
-    if(explosionParts[pCount].iterations < 500)
-      {
-        explosionParts[pCount].update();
-      }
-    if(explosionParts[pCount].iterations == 500)
-      {
-        explosionParts[pCount].endInteraction();
-      }
+function triggerAircraftCrash() {
+  if (hasAircraftCrashed) {
+    return;
   }
+
+  const impactPosition = loadedAircraftObjects[0].position;
+  const impactHeight = terrain.getTerrainHeight(impactPosition);
+
+  explosionParts.push(new ExplodeAnimation(
+    impactPosition.x,
+    Math.max(impactPosition.y, impactHeight) + 0.3,
+    impactPosition.z
+  ));
+  hasAircraftCrashed = true;
+  sound.stop();
 }
 
 var render = function() {

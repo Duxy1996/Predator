@@ -1,89 +1,97 @@
 
-var dirs = [];
+function ExplodeAnimation(x, y, z) {
+  const particleCount = 160;
+  const geometry = new THREE.Geometry();
+  const particleVelocities = [];
 
-function ExplodeAnimation(x, y, z)
-{
-  var colors = [0xec0d0d];
-  var colorsTwo = [0xf4c01c];
+  for (let i = 0; i < particleCount; i++) {
+    geometry.vertices.push(new THREE.Vector3());
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 0.12 + Math.random() * 0.48;
 
-
-  var movementSpeed = 0.2;
-  var totalObjects = 800;
-  var objectSize = 1;
-
-  var geometry = new THREE.Geometry();
-  var geometryRed = new THREE.Geometry();
-
-  dirs = [];
-
-  for (i = 0; i < totalObjects/2; i ++)
-  {
-    var vertex = new THREE.Vector3(x,y,z);
-
-    geometry.vertices.push( vertex );
-
-    dirs.push({x:(Math.random() * movementSpeed)-(movementSpeed/2),
-               y:(Math.random() * movementSpeed)-(movementSpeed/2),
-               z:(Math.random() * movementSpeed)-(movementSpeed/2)});
-
+    particleVelocities.push({
+      x: Math.cos(angle) * speed,
+      y: 0.08 + Math.random() * 0.62,
+      z: Math.sin(angle) * speed
+    });
   }
 
-  for (i = 0; i < totalObjects/2; i ++)
-    {
-      var vertex = new THREE.Vector3(x,y,z);
+  this.object = new THREE.Points(
+    geometry,
+    new THREE.PointsMaterial({
+      color: 0xffb52e,
+      size: 1.4,
+      transparent: true,
+      opacity: 1,
+      depthWrite: false
+    })
+  );
+  this.object.position.set(x, y, z);
 
-      geometryRed.vertices.push( vertex );
+  this.fireball = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 12, 8),
+    new THREE.MeshBasicMaterial({
+      color: 0xff6a16,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false
+    })
+  );
+  this.fireball.position.set(x, y, z);
 
-      dirs.push({x:(Math.random() * movementSpeed)-(movementSpeed/2),
-                 y:(Math.random() * movementSpeed)-(movementSpeed/2),
-                 z:(Math.random() * movementSpeed)-(movementSpeed/2)});
-
-    }
-
-  // Select random color from the array of colors
-  var randomColor = colors[Math.floor(Math.random() * colors.length)];
-  var randomColorTwo = colorsTwo[Math.floor(Math.random() * colorsTwo.length)];
-
-  var materialTwo = new THREE.PointsMaterial( { size: objectSize,  color: randomColorTwo });
-  var material = new THREE.PointsMaterial( { size: objectSize,  color: randomColor });
-
-  var particlesTwo = new THREE.Points( geometryRed, materialTwo );
-  var particles = new THREE.Points( geometry, material );
-
-  this.objectTwo = particlesTwo;
-  this.object = particles;
-
-  this.status = true;
+  this.smoke = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 10, 8),
+    new THREE.MeshBasicMaterial({
+      color: 0x292522,
+      transparent: true,
+      opacity: 0.45,
+      depthWrite: false
+    })
+  );
+  this.smoke.position.set(x, y, z);
 
   this.iterations = 0;
+  this.lifetime = 90;
 
-  scene.add( this.objectTwo );
-  scene.add( this.object );
+  scene.add(this.object);
+  scene.add(this.fireball);
+  scene.add(this.smoke);
 
   this.endInteraction = function() {
-    scene.remove( this.object );
-    scene.remove( this.objectTwo );
-  }
+    [this.object, this.fireball, this.smoke].forEach(function(effectObject) {
+      scene.remove(effectObject);
+      effectObject.geometry.dispose();
+      effectObject.material.dispose();
+    });
+  };
 
-  this.update = function(){
-    if (this.status == true){
-      var pCount = totalObjects/2;
-      while(pCount--) {
-        var particle =  this.object.geometry.vertices[pCount]
-        particle.y += dirs[pCount].y;
-        particle.x -= dirs[pCount].x;
-        particle.z += dirs[pCount].z;
+  this.update = function() {
+    const progress = this.iterations / this.lifetime;
+    const fireballScale = 0.1 + progress * 5;
+    const smokeScale = 0.2 + progress * 6;
 
-        var particle2 =  this.objectTwo.geometry.vertices[pCount]
-        particle2.y -= dirs[dirs.length - pCount - 1].x;
-        particle2.x += dirs[dirs.length - pCount - 1].z;
-        particle2.z += dirs[dirs.length - pCount - 1].y;
-      }
-      this.object.geometry.verticesNeedUpdate = true;
-      this.objectTwo.geometry.verticesNeedUpdate = true;
-      this.iterations++;
+    this.fireball.scale.set(fireballScale, fireballScale, fireballScale);
+    this.fireball.material.opacity = 0.9 * (1 - progress);
+    this.smoke.scale.set(smokeScale, smokeScale, smokeScale);
+    this.smoke.position.y += 0.025;
+    this.smoke.material.opacity = 0.45 * (1 - progress);
+    this.object.material.opacity = 1 - progress;
+
+    for (let i = 0; i < particleCount; i++) {
+      const particle = this.object.geometry.vertices[i];
+      const velocity = particleVelocities[i];
+
+      particle.x += velocity.x;
+      particle.y += velocity.y;
+      particle.z += velocity.z;
+      velocity.y -= 0.018;
+      velocity.x *= 0.99;
+      velocity.z *= 0.99;
     }
-  }
+
+    this.object.geometry.verticesNeedUpdate = true;
+    this.iterations++;
+  };
 }
 
 function DirectionalExplosion(x, y, z, direction)
@@ -96,21 +104,21 @@ function DirectionalExplosion(x, y, z, direction)
 
   let geometry = new THREE.Geometry();
 
-  dirs = [];
+  let particleVelocities = [];
 
   let directionThree = new THREE.Vector3(direction.x, direction.y, direction.z);
   directionThree.normalize();
 
-  for (i = 0; i < totalObjects/2; i ++)
+  for (let i = 0; i < totalObjects / 2; i++)
   {
     var vertex = new THREE.Vector3(x,y,z);
 
     geometry.vertices.push( vertex );
 
 
-    particleDispersion = {x:(Math.random() * movementSpeed/100) - (movementSpeed/100),
-                          y:(Math.random() * movementSpeed/100) - (movementSpeed/100),
-                          z:(Math.random() * movementSpeed) - (movementSpeed/2)};
+    let particleDispersion = {x:(Math.random() * movementSpeed/100) - (movementSpeed/100),
+                              y:(Math.random() * movementSpeed/100) - (movementSpeed/100),
+                              z:(Math.random() * movementSpeed) - (movementSpeed/2)};
 
 
     let velocity = new THREE.Vector3(particleDispersion.x, particleDispersion.y, particleDispersion.z);
@@ -126,9 +134,9 @@ function DirectionalExplosion(x, y, z, direction)
 
 
 
-    dirs.push({x: -alignedVelocity.x,
-               y: alignedVelocity.y,
-               z: alignedVelocity.z});
+    particleVelocities.push({x: -alignedVelocity.x,
+                             y: alignedVelocity.y,
+                             z: alignedVelocity.z});
 
   }
 
@@ -141,11 +149,14 @@ function DirectionalExplosion(x, y, z, direction)
   this.status = true;
 
   this.iterations = 0;
+  this.lifetime = 500;
 
   scene.add( this.object );
 
   this.endInteraction = function() {
     scene.remove( this.object );
+    this.object.geometry.dispose();
+    this.object.material.dispose();
   }
 
   this.update = function(){
@@ -153,9 +164,9 @@ function DirectionalExplosion(x, y, z, direction)
       var pCount = totalObjects/2;
       while(pCount--) {
         var particle =  this.object.geometry.vertices[pCount]
-        particle.y += dirs[pCount].y;
-        particle.x -= dirs[pCount].x;
-        particle.z += dirs[pCount].z;
+        particle.y += particleVelocities[pCount].y;
+        particle.x -= particleVelocities[pCount].x;
+        particle.z += particleVelocities[pCount].z;
       }
       this.object.geometry.verticesNeedUpdate = true;
       this.iterations++;

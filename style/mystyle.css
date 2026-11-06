@@ -41,6 +41,10 @@ body {
   font-family: "Audiowide", sans-serif;
 }
 
+*, *:before, *:after {
+  box-sizing: border-box;
+}
+
 .model-selector {
   position: fixed;
   inset: 0;
@@ -73,6 +77,7 @@ body {
   display: flex;
   justify-content: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .model-selector-options button {
@@ -277,23 +282,179 @@ body {
   opacity: 1;
 }
 
-@media (max-aspect-ratio: 9/16) {
+@media (max-width: 900px) {
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    margin: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100%;
+    height: 100dvh;
+    touch-action: none;
+  }
+
   .float-button {
-    height: 60px;
-    width: 60px;
-    border-radius: 30px;
-    position: absolute;
-    background: white;
+    z-index: 3;
+    width: 44px;
+    height: 44px;
+    border-width: 3px;
+    border-radius: 8px;
+    background: rgba(238, 238, 238, 0.9);
+  }
+
+  .gear-position,
+  .camera-position,
+  .gbu-position {
+    right: max(12px, env(safe-area-inset-right));
+    top: auto;
+  }
+
+  .gear-position {
+    top: calc(env(safe-area-inset-top) + 12px);
+  }
+
+  .camera-position {
+    top: calc(env(safe-area-inset-top) + 64px);
+  }
+
+  .gbu-position {
+    top: calc(env(safe-area-inset-top) + 116px);
+  }
+
+  .float-button-big {
+    z-index: 3;
+    width: auto;
+    min-width: 54px;
+    height: 38px;
+    padding: 0 8px;
+    border-width: 2px;
+    border-radius: 6px;
+    font-size: 11px;
+  }
+
+  .float-button-big:after {
+    display: none;
+  }
+
+  .float-button-big-content {
+    position: static;
+    width: 100%;
+    height: 100%;
+  }
+
+  .altitude-position,
+  .heading-position,
+  .hold-speed {
+    top: calc(env(safe-area-inset-top) + 12px);
+    bottom: auto;
+  }
+
+  .altitude-position {
+    left: max(12px, env(safe-area-inset-left));
+  }
+
+  .heading-position {
+    left: calc(max(12px, env(safe-area-inset-left)) + 62px);
+  }
+
+  .hold-speed {
+    left: calc(max(12px, env(safe-area-inset-left)) + 124px);
+  }
+
+  .showSpeed {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(env(safe-area-inset-bottom) + 300px);
+    left: auto;
+    width: 68px;
+    min-width: 68px;
+    height: 40px;
+    padding: 0 4px;
+    font-size: 10px;
+  }
+
+  .throttle-slider {
+    z-index: 3;
+    top: auto;
+    right: -28px;
+    bottom: calc(env(safe-area-inset-bottom) + 140px);
+    left: auto;
+    width: 140px;
+    height: 32px;
+    border-width: 3px;
+    transform-origin: center;
   }
 
   .flight-joystick {
-    bottom: 16px;
-    width: 140px;
-    height: 140px;
+    z-index: 2;
+    bottom: calc(env(safe-area-inset-bottom) + 12px);
+    width: clamp(112px, 36vw, 140px);
+    height: clamp(112px, 36vw, 140px);
   }
 
-  .thrust {
-    left: 5;
-    bottom: 42;
+  .flight-joystick-base {
+    border-width: 3px;
+  }
+
+  .flight-joystick-stick {
+    width: 44px;
+    height: 44px;
+    border-width: 3px;
+  }
+
+  .model-selector-panel {
+    width: min(90vw, 360px);
+    padding: 20px;
+  }
+
+  .model-selector-options {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .model-selector-options button {
+    width: 100%;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 900px) and (orientation: landscape) {
+  .altitude-position,
+  .heading-position,
+  .hold-speed {
+    top: auto;
+    left: max(12px, env(safe-area-inset-left));
+  }
+
+  .altitude-position {
+    bottom: calc(env(safe-area-inset-bottom) + 116px);
+  }
+
+  .heading-position {
+    bottom: calc(env(safe-area-inset-bottom) + 64px);
+  }
+
+  .hold-speed {
+    bottom: calc(env(safe-area-inset-bottom) + 12px);
+  }
+
+  .flight-joystick {
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom) + 10px);
+    width: 112px;
+    height: 112px;
+  }
+
+  .showSpeed {
+    bottom: calc(env(safe-area-inset-bottom) + 12px);
   }
 }
