@@ -57,9 +57,7 @@ var isPropellerLoaded;
 
 var currentHeading      = 0.0;
 var pitchInput        = 0.0;
-var accumulatedPitch       = 0.0;
 var rollInput         = 0.0;
-var accumulatedRoll       = 0.0;
 var commandedHeading = 0.0;
 
 var path      = './objects/MQ-9-Predator/';
@@ -205,7 +203,6 @@ function finishAircraftLoading() {
   loadedAircraftObjects[0].add(propellerAssemblyPivot[0]);
   loadedAircraftObjects[0].add(sphere);
   aircraftObject.rotateX(5 * degreesToRadians);
-  accumulatedPitch += 5 * degreesToRadians;
   scene.add(aircraftObject);
 }
 
@@ -253,10 +250,6 @@ function updateBody(generalThrust) {
       triggerAircraftCrash();
     }
 
-    aircraftObject.rotateX( pitchInput );
-    accumulatedPitch += pitchInput;
-    aircraftObject.rotateZ( rollInput );
-    accumulatedRoll += rollInput;
   }
 }
 
@@ -310,6 +303,7 @@ var render = function() {
       if (!hasAircraftCrashed) {
         var generalThrust = flightModel.updateThrust(document.getElementById("throttle").value);
 
+        flightModel.updateAttitude(aircraftObject, rollInput, pitchInput, 1/30);
         flightModel.simulateStep(aircraftPosition, aircraftVelocity, generalThrust, 1/30, aircraftObject);
 
         updateBody(generalThrust);
@@ -431,8 +425,8 @@ function setupFlightJoystick() {
 
     stick.style.left = "calc(50% + " + normalizedX * maxOffsetX + "px)";
     stick.style.top = "calc(50% + " + normalizedY * maxOffsetY + "px)";
-    rollInput = -normalizedX * 0.01;
-    pitchInput = normalizedY * 0.01;
+    rollInput = -normalizedX;
+    pitchInput = normalizedY;
   }
 
   joystick.addEventListener("pointerdown", function(event) {

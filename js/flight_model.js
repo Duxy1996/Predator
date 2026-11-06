@@ -15,7 +15,20 @@ class FlightModel {
       stallAngle: 15 * degreesToRadians,
       maxLiftCoefficient: 1.25,
       zeroLiftDragCoefficient: 0.035,
-      oswaldEfficiency: 0.8
+      oswaldEfficiency: 0.8,
+      maxBankAngle: 55 * degreesToRadians,
+      maxPitchAngle: 25 * degreesToRadians,
+      maxRollRate: 45 * degreesToRadians,
+      maxPitchRate: 25 * degreesToRadians,
+      rollResponse: 3,
+      pitchResponse: 3,
+      rollDamping: 1.5,
+      pitchDamping: 1.5,
+      maxRollAcceleration: 90 * degreesToRadians,
+      maxPitchAcceleration: 60 * degreesToRadians,
+      sideSlipDamping: 1.5,
+      headingAlignment: 2,
+      maxHeadingCorrectionRate: 20 * degreesToRadians
     }, parameters);
 
     // Aspect ratio and induced-drag factor stay fixed for this model instance.
@@ -27,11 +40,60 @@ class FlightModel {
     // Reuse these vectors each frame instead of allocating new objects in the hot path.
     this.threeForward = new THREE.Vector3();
     this.threeUp = new THREE.Vector3();
+    this.threeRight = new THREE.Vector3();
+    this.threeWorldUp = new THREE.Vector3(0, 1, 0);
     this.acceleration = { x: 0, y: 0, z: 0 };
+    this.rollRate = 0;
+    this.pitchRate = 0;
   }
 
   updateThrust(throttle) {
     return Math.max(0, Math.min(1, Number(throttle) / 100));
+  }
+
+  updateAttitude(body, rollCommand, pitchCommand, deltaTime) {
+    const parameters = this.parameters;
+    const rollTarget = Math.max(-1, Math.min(1, rollCommand)) * parameters.maxBankAngle;
+    const pitchTarget = Math.max(-1, Math.min(1, pitchCommand)) * parameters.maxPitchAngle;
+    const rollError = rollTarget - body.rotation.z;
+    const pitchError = pitchTarget - body.rotation.x;
+    const targetRollRate = Math.max(-parameters.maxRollRate, Math.min(
+      parameters.maxRollRate,
+      rollError * parameters.rollResponse - this.rollRate * parameters.rollDamping
+    ));
+    const targetPitchRate = Math.max(-parameters.maxPitchRate, Math.min(
+      parameters.maxPitchRate,
+      pitchError * parameters.pitchResponse - this.pitchRate * parameters.pitchDamping
+    ));
+
+    this.rollRate += Math.max(
+      -parameters.maxRollAcceleration * deltaTime,
+      Math.min(parameters.maxRollAcceleration * deltaTime, targetRollRate - this.rollRate)
+    );
+    this.pitchRate += Math.max(
+      -parameters.maxPitchAcceleration * deltaTime,
+      Math.min(parameters.maxPitchAcceleration * deltaTime, targetPitchRate - this.pitchRate)
+    );
+
+    body.rotateZ(this.rollRate * deltaTime);
+    body.rotateX(this.pitchRate * deltaTime);
+
+    const limitedRoll = Math.max(
+      -parameters.maxBankAngle,
+      Math.min(parameters.maxBankAngle, body.rotation.z)
+    );
+    const limitedPitch = Math.max(
+      -parameters.maxPitchAngle,
+      Math.min(parameters.maxPitchAngle, body.rotation.x)
+    );
+    if (limitedRoll !== body.rotation.z) {
+      body.rotation.z = limitedRoll;
+      this.rollRate = 0;
+    }
+    if (limitedPitch !== body.rotation.x) {
+      body.rotation.x = limitedPitch;
+      this.pitchRate = 0;
+    }
   }
 
   simulateStep(position, velocity, throttle, deltaTime, body) {
@@ -41,12 +103,16 @@ class FlightModel {
     // +X is forward, +Y is up, and +Z is to the aircraft's right.
     this.threeForward.set(0, 0, -1).applyQuaternion(body.quaternion);
     this.threeUp.set(0, 1, 0).applyQuaternion(body.quaternion);
+    this.threeRight.set(1, 0, 0).applyQuaternion(body.quaternion);
     const forwardX = -this.threeForward.z;
     const forwardY = this.threeForward.y;
     const forwardZ = this.threeForward.x;
     const upX = -this.threeUp.z;
     const upY = this.threeUp.y;
     const upZ = this.threeUp.x;
+    const rightX = -this.threeRight.z;
+    const rightY = this.threeRight.y;
+    const rightZ = this.threeRight.x;
 
     const speedSquared = velocity.x * velocity.x
       + velocity.y * velocity.y
@@ -114,6 +180,16 @@ class FlightModel {
       + liftMagnitude * liftZ
       - dragMagnitude * velocityUnitZ) * inverseMass;
 
+    // Dampen airflow across the fuselage so the aircraft does not accumulate
+    // sideways drift in the simulation's no-wind environment.
+    const sideSlipSpeed = velocity.x * rightX
+      + velocity.y * rightY
+      + velocity.z * rightZ;
+    const sideSlipAcceleration = -sideSlipSpeed * parameters.sideSlipDamping;
+    acceleration.x += sideSlipAcceleration * rightX;
+    acceleration.y += sideSlipAcceleration * rightY;
+    acceleration.z += sideSlipAcceleration * rightZ;
+
     // Semi-implicit Euler is stable for the simulation's small fixed time step.
     velocity.x += acceleration.x * deltaTime;
     velocity.y += acceleration.y * deltaTime;
@@ -123,12 +199,26 @@ class FlightModel {
     position.y += velocity.y * deltaTime;
     position.z += velocity.z * deltaTime;
 
-    // Turn the nose with the actual horizontal change in flight direction.
+    // Follow the turn and gently align the nose with the no-wind flight path.
     const horizontalSpeedSquared = velocity.x * velocity.x + velocity.z * velocity.z;
     if (horizontalSpeedSquared > 0) {
       const turnRate = (velocity.z * acceleration.x - velocity.x * acceleration.z)
         / horizontalSpeedSquared;
-      body.rotateY(turnRate * deltaTime);
+      const headingError = Math.atan2(
+        forwardX * velocity.z - forwardZ * velocity.x,
+        forwardX * velocity.x + forwardZ * velocity.z
+      );
+      const headingCorrectionRate = Math.max(
+        -parameters.maxHeadingCorrectionRate,
+        Math.min(
+          parameters.maxHeadingCorrectionRate,
+          headingError * parameters.headingAlignment
+        )
+      );
+      body.rotateOnWorldAxis(
+        this.threeWorldUp,
+        (turnRate - headingCorrectionRate) * deltaTime
+      );
     }
 
     // Keep the existing Three.js-to-simulation scale used by the rest of the app.
