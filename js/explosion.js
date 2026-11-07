@@ -65,7 +65,7 @@ function ExplodeAnimation(x, y, z) {
     });
   };
 
-  this.update = function() {
+  this.update = function(frameScale) {
     const progress = this.iterations / this.lifetime;
     const fireballScale = 0.1 + progress * 5;
     const smokeScale = 0.2 + progress * 6;
@@ -73,7 +73,7 @@ function ExplodeAnimation(x, y, z) {
     this.fireball.scale.set(fireballScale, fireballScale, fireballScale);
     this.fireball.material.opacity = 0.9 * (1 - progress);
     this.smoke.scale.set(smokeScale, smokeScale, smokeScale);
-    this.smoke.position.y += 0.025;
+    this.smoke.position.y += 0.025 * frameScale;
     this.smoke.material.opacity = 0.45 * (1 - progress);
     this.object.material.opacity = 1 - progress;
 
@@ -81,16 +81,16 @@ function ExplodeAnimation(x, y, z) {
       const particle = this.object.geometry.vertices[i];
       const velocity = particleVelocities[i];
 
-      particle.x += velocity.x;
-      particle.y += velocity.y;
-      particle.z += velocity.z;
-      velocity.y -= 0.018;
-      velocity.x *= 0.99;
-      velocity.z *= 0.99;
+      particle.x += velocity.x * frameScale;
+      particle.y += velocity.y * frameScale;
+      particle.z += velocity.z * frameScale;
+      velocity.y -= 0.018 * frameScale;
+      velocity.x *= Math.pow(0.99, frameScale);
+      velocity.z *= Math.pow(0.99, frameScale);
     }
 
     this.object.geometry.verticesNeedUpdate = true;
-    this.iterations++;
+    this.iterations += frameScale;
   };
 }
 
@@ -151,18 +151,18 @@ function DirectionalExplosion(x, y, z, direction)
     this.object.material.dispose();
   }
 
-  this.update = function(){
+  this.update = function(frameScale){
     if (this.status == true){
       var pCount = totalObjects/2;
       while(pCount--) {
         var particle = this.object.geometry.vertices[pCount];
         var velocityIndex = pCount * 3;
-        particle.y += particleVelocities[velocityIndex + 1];
-        particle.x -= particleVelocities[velocityIndex];
-        particle.z += particleVelocities[velocityIndex + 2];
+        particle.y += particleVelocities[velocityIndex + 1] * frameScale;
+        particle.x -= particleVelocities[velocityIndex] * frameScale;
+        particle.z += particleVelocities[velocityIndex + 2] * frameScale;
       }
       this.object.geometry.verticesNeedUpdate = true;
-      this.iterations++;
+      this.iterations += frameScale;
     }
   }
 }

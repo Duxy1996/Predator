@@ -1,6 +1,7 @@
 
-const SIMULATION_DELTA_TIME = 1 / 30;
-const SIMULATION_FRAME_INTERVAL = SIMULATION_DELTA_TIME * 1000;
+const SIMULATION_DELTA_TIME = 0.01666666666;
+const SIMULATION_FRAME_INTERVAL = 16.6666666667;
+const SIMULATION_FRAME_SCALE = SIMULATION_DELTA_TIME * 30;
 const METERS_PER_SECOND_TO_KMH = 3.6;
 const SPEED_DISPLAY_SCALE = METERS_PER_SECOND_TO_KMH * 10;
 
@@ -50,6 +51,9 @@ throttleElement.value = 50;
 
 var renderer  = new THREE.WebGLRenderer({antialias:true});
 var controls  = new THREE.OrbitControls( camera, renderer.domElement );
+var stats = new Stats();
+stats.showPanel(0);
+document.body.appendChild(stats.dom);
 
 // Limit camera interaction to 30 m to keep the horizon out of view.
 controls.maxDistance = 30;
@@ -72,19 +76,19 @@ var explosionParts = [];
 
 var isPropellerLoaded;
 
-var currentHeading      = 0.0;
-var pitchInput        = 0.0;
-var rollInput         = 0.0;
+var currentHeading   = 0.0;
+var pitchInput       = 0.0;
+var rollInput        = 0.0;
 var commandedHeading = 0.0;
 
 var path      = './objects/MQ-9-Predator/';
 
-var rightBombModelName   = 'Right-GBU';
+var rightBombModelName  = 'Right-GBU';
 var leftBombModelName   = 'Left-GBU';
-var propellerModelName     = 'Back-Prop';
-var frontWheelModelName     = 'Front-wheel';
-var leftWheelModelName     = 'Left-wheel';
-var rightWheelModelName     = 'Right-wheel';
+var propellerModelName  = 'Back-Prop';
+var frontWheelModelName = 'Front-wheel';
+var leftWheelModelName  = 'Left-wheel';
+var rightWheelModelName = 'Right-wheel';
 var aircraftObjectScale = 10;
 var isAircraftSelectionStarted = false;
 var aircraftOptions = {
@@ -115,6 +119,7 @@ let leftBombObjects   = [];
 // Initial flight state for the simulation.
 var aircraftPosition     = {x: 0, y: 10, z: 0}
 var aircraftVelocity     = {x: 80, y: 0, z: 0}
+
 // Tune the defaults here, for example: new FlightModel({ maxThrust: 11000, wingArea: 24 }).
 var flightModel      = new FlightModel();
 
@@ -255,7 +260,7 @@ function updateBody() {
 
   if(isPropellerLoaded)
   {
-    propellerAssemblyPivot[0].rotation.z -= 0.42;
+    propellerAssemblyPivot[0].rotation.z -= 0.42 * SIMULATION_FRAME_SCALE;
   }
 
   if (loadedAircraftObjects.length > 0)
@@ -301,7 +306,7 @@ function explosionAnimation()
       explosion.endInteraction();
       explosionParts.splice(i, 1);
     } else {
-      explosion.update();
+      explosion.update(SIMULATION_FRAME_SCALE);
     }
   }
 }
@@ -330,6 +335,7 @@ var render = function(timestamp) {
     return;
   }
   render.lastFrameTime = timestamp;
+  stats.begin();
 
   if (isAircraftFullyLoaded)
   {
@@ -337,7 +343,7 @@ var render = function(timestamp) {
     {
       explosionAnimation()
 
-      updateWeaponSystem();
+      updateWeaponSystem(SIMULATION_FRAME_SCALE);
 
       controls.update();
 
@@ -355,13 +361,20 @@ var render = function(timestamp) {
 
         updateBody();
 
-        landingGearUpdate(isLandingGearUp, frontWheelObjects[0], leftWheelObjects[0], rightWheelObjects[0]);
+        landingGearUpdate(
+          isLandingGearUp,
+          frontWheelObjects[0],
+          leftWheelObjects[0],
+          rightWheelObjects[0],
+          SIMULATION_FRAME_SCALE
+        );
       }
     }
   }
 
   updateFlightHud();
   renderer.render(scene, camera);
+  stats.end();
 };
 
 window.addEventListener('resize', onWindowResize, false );

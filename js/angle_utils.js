@@ -1,2 +1,2 @@
-const degreesToRadians = Math.PI / 180;
-const radiansToDegrees = 180 / Math.PI;
+const degreesToRadians = 0.01745329251;
+const radiansToDegrees = 57.2957795131;

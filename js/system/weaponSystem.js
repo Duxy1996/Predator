@@ -67,21 +67,21 @@ function launchBomb() {
     }
 }
 
-function updateWeaponSystem()
+function updateWeaponSystem(frameScale)
 {
   if (isLeftBombReleased) {
     if (leftBomb != undefined) {
-      leftBomb.position.z += 0.23 * weaponDirection.z;
-      leftBomb.position.y += 0.23 * weaponDirection.y;
-      leftBomb.position.x += 0.23 * weaponDirection.x;
+      leftBomb.position.z += 0.23 * frameScale * weaponDirection.z;
+      leftBomb.position.y += 0.23 * frameScale * weaponDirection.y;
+      leftBomb.position.x += 0.23 * frameScale * weaponDirection.x;
     }
   }
 
   if (isRightBombReleased) {
     if (rightBomb != undefined) {
-      rightBomb.position.z += 0.23 * weaponDirection.z;
-      rightBomb.position.y += 0.23 * weaponDirection.y;
-      rightBomb.position.x += 0.23 * weaponDirection.x;
+      rightBomb.position.z += 0.23 * frameScale * weaponDirection.z;
+      rightBomb.position.y += 0.23 * frameScale * weaponDirection.y;
+      rightBomb.position.x += 0.23 * frameScale * weaponDirection.x;
     }
   }
 }
