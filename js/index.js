@@ -73,6 +73,8 @@ var isAircraftFullyLoaded = false;
 
 
 var explosionParts = [];
+var groundUnits = [];
+var groundUnitPositions = [{ x: 20, z: -60 }];
 
 var isPropellerLoaded;
 
@@ -226,6 +228,16 @@ function finishAircraftLoading() {
   loadedAircraftObjects[0].add(sphere);
   aircraftObject.rotateX(5 * degreesToRadians);
   scene.add(aircraftObject);
+
+  groundUnits = groundUnitPositions.map(function(position) {
+    return new GroundUnit({
+      scene: scene,
+      terrain: terrain,
+      missileTemplate: leftBombPivots[0].children[0],
+      position: position,
+      onIntercept: triggerAircraftCrash
+    });
+  });
 }
 
 var propellerAssemblyPivot = [pivotFactory()];
@@ -369,6 +381,14 @@ var render = function(timestamp) {
           SIMULATION_FRAME_SCALE
         );
       }
+
+      groundUnits.forEach(function(groundUnit) {
+        if (hasAircraftCrashed) {
+          groundUnit.stop();
+        } else {
+          groundUnit.update(aircraftObject.position, SIMULATION_DELTA_TIME);
+        }
+      });
     }
   }
 
